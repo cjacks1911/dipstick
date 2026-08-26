@@ -1,0 +1,965 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>(function(){try{var t=localStorage.getItem('dipstick.theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dipstick — Vehicle</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0d10">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header class="no-print">
+  <div class="wrap">
+    <a class="brand" href="index.html"><img class="mark" src="logo-mark.png" alt="Dipstick logo">DIPSTICK<span class="tag">garage log</span></a>
+    <nav>
+      <a href="index.html">Dashboard</a>
+      <a href="providers.html">Shops</a>
+      <a href="privacy.html">Privacy</a>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme"></button>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <div class="panel no-print" id="vehicleHeader"></div>
+
+    <div class="panel no-print" id="repairAgePanel"></div>
+
+    <div class="tabs no-print">
+      <button data-tab="service" class="active">Service</button>
+      <button data-tab="fuel">Fuel</button>
+      <button data-tab="parts">Parts &amp; Tires</button>
+      <button data-tab="docs">Documents</button>
+      <button data-tab="warranty">Warranty</button>
+      <button data-tab="insurance">Insurance</button>
+      <button data-tab="cost">Cost</button>
+      <button data-tab="trips">Trips</button>
+      <button data-tab="obd">OBD2</button>
+    </div>
+
+    <!-- SERVICE -->
+    <div class="tab-panel active no-print" id="tab-service">
+      <div class="panel" id="dueListPanel"></div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;align-items:center">
+          <h2 style="margin:0">Log a Service</h2>
+          <button class="btn sm" id="printBtn" type="button">Print / Save PDF</button>
+        </div>
+        <form class="form-grid" id="serviceForm" style="margin-top:12px">
+          <div class="field"><label>Service type</label><input id="svcType" list="svcTypes" placeholder="Oil Change" required><datalist id="svcTypes"></datalist></div>
+          <div class="field"><label>Date</label><input id="svcDate" type="date"></div>
+          <div class="field"><label>Odometer</label><input id="svcMileage" type="number" placeholder="mi"></div>
+          <div class="field"><label>Cost</label><input id="svcCost" type="number" placeholder="optional"></div>
+          <div class="field"><label>Shop</label><select id="svcProvider"><option value="">Self / DIY</option></select></div>
+          <div class="field full"><label>Notes</label><input id="svcNotes" placeholder="optional"></div>
+          <div class="field full"><button class="btn primary" type="submit">Log service</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Intervals</h2>
+        <p class="muted" style="font-size:12.5px">A starting point compiled from typical normal-duty figures, not your car's schedule — the owner's manual is the only authority. Blank a box to stop judging that dimension.</p>
+        <div style="margin:8px 0"><label class="muted" style="font-size:12.5px"><input type="checkbox" id="severeDuty"> Severe duty (scales every interval ×0.7)</label></div>
+        <div id="intervalEditor"></div>
+      </div>
+      <div class="panel">
+        <h2>Service History <span class="muted" id="svcCount" style="font-size:12px;font-weight:400"></span></h2>
+        <div class="table-scroll"><table id="svcTable"><thead><tr><th>Date</th><th>Service</th><th>Odometer</th><th>Cost</th><th>Shop</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div style="margin-top:10px"><button class="btn sm" id="csvMaintBtn" type="button">Export CSV</button></div>
+      </div>
+    </div>
+
+    <!-- FUEL -->
+    <div class="tab-panel no-print" id="tab-fuel">
+      <div class="panel">
+        <h2>Log a Fill-up</h2>
+        <form class="form-grid" id="fuelForm">
+          <div class="field"><label>Date</label><input id="fuelDate" type="date"></div>
+          <div class="field"><label>Odometer</label><input id="fuelMileage" type="number" placeholder="mi" required></div>
+          <div class="field"><label>Gallons</label><input id="fuelGallons" type="number" step="0.01" placeholder="or use kWh"></div>
+          <div class="field"><label>kWh (EV)</label><input id="fuelKwh" type="number" step="0.1" placeholder="if electric"></div>
+          <div class="field"><label>Total cost</label><input id="fuelPrice" type="number" step="0.01" placeholder="optional"></div>
+          <div class="field"><label><input type="checkbox" id="fuelFull" checked> Filled to full</label></div>
+          <div class="field full"><button class="btn primary" type="submit">Log fill-up</button></div>
+        </form>
+      </div>
+      <div class="grid cols-3" id="fuelStats"></div>
+      <div class="panel">
+        <h2>Fuel Log</h2>
+        <div class="table-scroll"><table id="fuelTable"><thead><tr><th>Date</th><th>Odometer</th><th>Amount</th><th>Cost</th><th>Full</th><th></th></tr></thead><tbody></tbody></table></div>
+        <div style="margin-top:10px"><button class="btn sm" id="csvFuelBtn" type="button">Export CSV</button></div>
+      </div>
+    </div>
+
+    <!-- PARTS & TIRES -->
+    <div class="tab-panel no-print" id="tab-parts">
+      <div class="panel">
+        <h2>Add a Part</h2>
+        <form class="form-grid" id="partForm">
+          <div class="field"><label>Part</label><input id="partName" placeholder="Battery, wipers, belt…" required></div>
+          <div class="field"><label>Brand</label><input id="partBrand" placeholder="optional"></div>
+          <div class="field"><label>Installed on</label><input id="partDate" type="date"></div>
+          <div class="field"><label>Odometer at install</label><input id="partMileage" type="number"></div>
+          <div class="field"><label>Cost</label><input id="partCost" type="number" placeholder="optional"></div>
+          <div class="field"><label>Expected life (miles)</label><input id="partLifeMiles" type="number" placeholder="optional"></div>
+          <div class="field"><label>Expected life (months)</label><input id="partLifeMonths" type="number" placeholder="optional"></div>
+          <div class="field full"><button class="btn primary" type="submit">Save part</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Parts</h2>
+        <div id="partsList"></div>
+        <p class="empty-note" id="partsEmpty" style="display:none">No parts logged yet.</p>
+        <div style="margin-top:10px"><button class="btn sm" id="csvPartsBtn" type="button">Export CSV</button></div>
+      </div>
+      <div class="panel">
+        <h2>Add Tires</h2>
+        <form class="form-grid" id="tireForm">
+          <div class="field"><label>Position</label><select id="tirePosition"><option>Full set</option><option>Front</option><option>Rear</option></select></div>
+          <div class="field"><label>Brand</label><input id="tireBrand" placeholder="optional"></div>
+          <div class="field"><label>Installed on</label><input id="tireDate" type="date"></div>
+          <div class="field"><label>Odometer at install</label><input id="tireMileage" type="number"></div>
+          <div class="field full"><button class="btn primary" type="submit">Save tires</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Tires &amp; Tread</h2>
+        <div id="tiresList"></div>
+        <p class="empty-note" id="tiresEmpty" style="display:none">No tires logged yet.</p>
+      </div>
+    </div>
+
+    <!-- DOCUMENTS -->
+    <div class="tab-panel no-print" id="tab-docs">
+      <div class="panel">
+        <h2>Add a Document</h2>
+        <p class="muted" style="font-size:12.5px">Registration, insurance card, title, warranty booklet — stored on this device only, never uploaded anywhere.</p>
+        <form class="form-grid" id="docForm">
+          <div class="field"><label>Name</label><input id="docName" placeholder="Insurance card" required></div>
+          <div class="field"><label>Category</label><select id="docCategory"><option value="insurance">Insurance</option><option value="registration">Registration</option><option value="title">Title</option><option value="warranty">Warranty</option><option value="other">Other</option></select></div>
+          <div class="field"><label>Expires on</label><input id="docExpires" type="date"></div>
+          <div class="field"><label>File (image or PDF, optional)</label><input id="docFile" type="file" accept="image/*,application/pdf"></div>
+          <div class="field full"><button class="btn primary" type="submit">Save document</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Documents</h2>
+        <div id="docsList"></div>
+        <p class="empty-note" id="docsEmpty" style="display:none">No documents saved yet.</p>
+      </div>
+    </div>
+
+    <!-- WARRANTY -->
+    <div class="tab-panel no-print" id="tab-warranty">
+      <div class="panel">
+        <h2>Add a Warranty</h2>
+        <form class="form-grid" id="warrantyForm">
+          <div class="field"><label>Name</label><input id="warrName" placeholder="Powertrain warranty" required></div>
+          <div class="field"><label>Provider</label><input id="warrProvider" placeholder="optional"></div>
+          <div class="field"><label>Expires on</label><input id="warrExpiresOn" type="date"></div>
+          <div class="field"><label>Expires at mileage</label><input id="warrExpiresMileage" type="number" placeholder="optional"></div>
+          <div class="field full"><label>Notes</label><input id="warrNotes" placeholder="optional"></div>
+          <div class="field full"><button class="btn primary" type="submit">Save warranty</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Warranties</h2>
+        <div id="warrList"></div>
+        <p class="empty-note" id="warrEmpty" style="display:none">No warranties saved yet.</p>
+      </div>
+    </div>
+
+    <!-- INSURANCE -->
+    <div class="tab-panel no-print" id="tab-insurance">
+      <div class="panel">
+        <h2>Log a Claim</h2>
+        <p class="muted" style="font-size:12.5px">A dedicated record for accidents and claims, separate from routine maintenance — what happened, what you filed, what came back.</p>
+        <form class="form-grid" id="claimForm">
+          <div class="field"><label>Date</label><input id="claimDate" type="date" required></div>
+          <div class="field"><label>Category</label>
+            <select id="claimCategory">
+              <option value="accident">Accident</option>
+              <option value="theft">Theft</option>
+              <option value="glass">Glass</option>
+              <option value="weather">Weather</option>
+              <option value="liability">Liability</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="field"><label>Insurer</label><input id="claimInsurer" placeholder="optional"></div>
+          <div class="field"><label>Status</label>
+            <select id="claimStatus">
+              <option value="filed">Filed</option>
+              <option value="approved">Approved</option>
+              <option value="denied">Denied</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+          <div class="field full"><label>What happened</label><input id="claimDescription" placeholder="Rear-ended at a light, bumper and taillight damage" required></div>
+          <div class="field"><label>Amount claimed</label><input id="claimClaimedAmount" type="number" placeholder="optional"></div>
+          <div class="field"><label>Deductible</label><input id="claimDeductible" type="number" placeholder="optional"></div>
+          <div class="field"><label>Paid out</label><input id="claimPaidAmount" type="number" placeholder="optional"></div>
+          <div class="field full"><label>Notes</label><input id="claimNotes" placeholder="optional"></div>
+          <div class="field full"><button class="btn primary" type="submit">Save claim</button></div>
+        </form>
+      </div>
+      <div class="panel">
+        <h2>Claims</h2>
+        <div id="claimList"></div>
+        <p class="empty-note" id="claimEmpty" style="display:none">No claims logged yet.</p>
+        <div style="margin-top:10px"><button class="btn sm" id="csvClaimBtn" type="button">Export CSV</button></div>
+      </div>
+    </div>
+
+    <!-- COST -->
+    <div class="tab-panel no-print" id="tab-cost">
+      <div class="panel">
+        <h2>True Cost of Ownership</h2>
+        <p class="muted" style="font-size:12.5px">Depreciation plus every dollar logged — maintenance, parts and fuel — divided by miles driven since purchase. This is the number fuel-and-service-only apps leave out.</p>
+        <div id="costSummary"></div>
+      </div>
+      <div class="panel">
+        <h2>Value Over Time</h2>
+        <form class="form-grid" id="valuationForm">
+          <div class="field"><label>Date</label><input id="valDate" type="date"></div>
+          <div class="field"><label>Estimated value</label><input id="valAmount" type="number" required></div>
+          <div class="field full"><button class="btn" type="submit">Add valuation</button></div>
+        </form>
+        <div class="table-scroll"><table id="valTable" style="margin-top:12px"><thead><tr><th>Date</th><th>Value</th></tr></thead><tbody></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- TRIPS -->
+    <div class="tab-panel no-print" id="tab-trips">
+      <div class="panel" id="mileageSuggestPanel" style="display:none"></div>
+      <div class="panel" id="tripSupportPanel"></div>
+      <div class="panel" id="tripLivePanel" style="display:none">
+        <h2 style="margin:0 0 6px">Trip in progress</h2>
+        <div class="grid cols-3">
+          <div class="stat"><div class="n" id="tripLiveMiles">0.0</div><div class="l">Miles so far</div></div>
+          <div class="stat"><div class="n" id="tripLiveTime">0:00</div><div class="l">Elapsed</div></div>
+          <div class="stat"><div class="n" id="tripLivePoints">0</div><div class="l">GPS points</div></div>
+        </div>
+        <p class="muted" id="tripLiveNote" style="font-size:12.5px;margin-top:10px">Keep this tab open — location stops updating the moment you leave it.</p>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button class="btn primary" id="tripStopBtn" type="button">Stop &amp; save trip</button>
+          <button class="btn danger" id="tripDiscardBtn" type="button">Discard</button>
+        </div>
+      </div>
+      <div class="panel" id="tripStartPanel">
+        <h2 style="margin:0 0 6px">Log a Trip</h2>
+        <p class="muted" style="font-size:12.5px">Distance is measured by GPS while this tab stays open — no background tracking, nothing runs once you close it. Good for the "how far did I actually drive this week" question; not a replacement for the odometer.</p>
+        <button class="btn primary" id="tripStartBtn" type="button">Start trip</button>
+      </div>
+      <div class="panel">
+        <h2>Trip Log <span class="muted" id="tripCount" style="font-size:12px;font-weight:400"></span></h2>
+        <div id="tripsList"></div>
+        <p class="empty-note" id="tripsEmpty" style="display:none">No trips logged yet.</p>
+      </div>
+    </div>
+
+    <!-- OBD2 -->
+    <div class="tab-panel no-print" id="tab-obd">
+      <div class="panel" id="obdSupportPanel"></div>
+      <div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <h2 style="margin:0">Adapter</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn primary" id="obdConnectBtn" type="button">Connect adapter</button>
+            <button class="btn danger" id="obdDisconnectBtn" type="button" style="display:none">Disconnect</button>
+          </div>
+        </div>
+        <p class="muted" style="font-size:12.5px;margin-top:8px">Works with <b>BLE</b> OBD2 adapters only — Vgate iCar Pro BLE, OBDLink CX/MX+, Kiwi 3, and similar. Most classic $10 ELM327 dongles use Bluetooth Classic, which no website can reach; check your adapter's listing for "Bluetooth Low Energy" or "BLE" before buying one for this. Chrome or Edge only — Safari and iOS don't support this at all, in any app.</p>
+        <div id="obdStatus" style="margin-top:10px"></div>
+      </div>
+      <div class="panel" id="obdLivePanel" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <h2 style="margin:0">Live Readings</h2>
+          <button class="btn sm" id="obdLiveToggleBtn" type="button">Start live read</button>
+        </div>
+        <div class="grid cols-3" id="obdGauges" style="margin-top:12px"></div>
+      </div>
+      <div class="panel" id="obdDtcPanel" style="display:none">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <h2 style="margin:0">Trouble Codes</h2>
+          <div style="display:flex;gap:8px">
+            <button class="btn sm" id="obdReadDtcBtn" type="button">Read codes</button>
+            <button class="btn sm danger" id="obdClearDtcBtn" type="button">Clear codes</button>
+          </div>
+        </div>
+        <div id="obdDtcList" style="margin-top:10px"></div>
+      </div>
+      <div class="panel">
+        <h2>Diagnostic History <span class="muted" id="dtcEventCount" style="font-size:12px;font-weight:400"></span></h2>
+        <div id="dtcEventsList"></div>
+        <p class="empty-note" id="dtcEventsEmpty" style="display:none">No reads yet.</p>
+      </div>
+    </div>
+
+    <!-- Print-only service record -->
+    <div id="printArea"></div>
+
+  </div>
+</main>
+
+<footer class="no-print">
+  <div class="wrap"><span>DIPSTICK — the memory your car doesn't have.</span></div>
+</footer>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+<script>
+(function(){
+  var D = window.DIPSTICK;
+  D.initThemeToggle(document.getElementById('themeToggle'));
+  var vehicleId = new URLSearchParams(location.search).get('id');
+  var toastTimer;
+  function toast(msg){
+    var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+    clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.classList.remove('show');},2600);
+  }
+  function v(){ return D.getVehicle(vehicleId); }
+  function pill(status,label){ return '<span class="pill '+status+'">'+D.esc(label||status)+'</span>'; }
+
+  function renderHeader(){
+    var veh = v();
+    var recall = D.recallStatus(veh);
+    var recallHtml = recall.checked
+      ? (recall.count
+          ? '<span class="pill '+(recall.urgent?'overdue':'soon')+'">'+recall.count+' open recall'+(recall.count===1?'':'s')+'</span>'
+          : '<span class="pill ok">No open recalls</span>') + ' <span class="muted" style="font-size:11.5px">checked '+D.fmtDate(recall.days!=null?D.shiftDays(D.todayKey(),-recall.days):'')+'</span>'
+      : '<span class="muted" style="font-size:12.5px">Not checked yet</span>';
+    var mc = D.mileageCheckinStatus(veh);
+    var checkinHtml = (mc.status==='overdue' || mc.status==='soon')
+      ? pill(mc.status, mc.status==='overdue' ? 'Please confirm mileage' : 'Confirm mileage')+' <span class="muted" style="font-size:11.5px">'+(mc.lastUpdated ? mc.daysSince+' days since last confirmed' : 'never confirmed')+'</span>'
+      : '<span class="muted" style="font-size:11.5px">'+(mc.lastUpdated ? 'Confirmed '+D.fmtDate(mc.lastUpdated) : '')+'</span>';
+    document.getElementById('vehicleHeader').innerHTML =
+      '<div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px">'+
+      '<div><div class="kicker">'+(veh.vin?'VIN '+D.esc(veh.vin):'No VIN on file')+'</div>'+
+      '<h1>'+D.esc(D.vehicleTitle(veh))+(veh.trim?' '+D.esc(veh.trim):'')+'</h1>'+
+      '<div class="muted">'+D.fmtMiles(veh.mileage)+' on the odometer'+(veh.notes?' · '+D.esc(veh.notes):'')+'</div></div>'+
+      '<div class="recall-box"><div style="margin-bottom:8px">'+recallHtml+'</div>'+
+      '<button class="btn sm" id="recallBtn" type="button">Check NHTSA recalls</button> '+
+      '<button class="btn sm danger" id="deleteVehicleBtn" type="button">Delete vehicle</button></div>'+
+      '</div>'+
+      '<div class="field" style="max-width:280px;margin-top:14px"><label>Update odometer</label>'+
+      '<input id="odoUpdate" type="number" value="'+(veh.mileage||'')+'">'+
+      '<div style="margin-top:6px">'+checkinHtml+'</div></div>';
+
+    document.getElementById('recallBtn').addEventListener('click', function(){
+      var btn=this; btn.disabled=true; btn.textContent='Checking…';
+      D.refreshRecalls(veh).then(function(){ D.scheduleSave(); renderHeader(); toast('Recall check complete'); })
+        .catch(function(err){ toast(String(err.message)==='need_year_make_model' ? 'Add year/make/model first' : 'Could not reach NHTSA'); })
+        .then(function(){ btn.disabled=false; btn.textContent='Check NHTSA recalls'; });
+    });
+    document.getElementById('deleteVehicleBtn').addEventListener('click', function(){
+      if(!confirm('Delete this vehicle and all its records? This cannot be undone.')) return;
+      D.removeVehicle(vehicleId);
+      // saveState(), not scheduleSave() — navigating immediately after would
+      // otherwise unload the page before the debounced save ever fires, and
+      // the "deleted" vehicle would simply reappear on the next visit.
+      D.saveState().then(function(){ location.href='index.html'; });
+    });
+    document.getElementById('odoUpdate').addEventListener('change', function(){
+      var miles = Number(this.value);
+      if (miles >= 0) D.recordMileage(veh, miles, D.todayKey(), true);
+      D.scheduleSave(); renderAll();
+    });
+  }
+
+  /**
+   * REPAIR AGE — condition age vs. calendar age, built entirely from this
+   * vehicle's own logged history (see D.repairAgeReport in app.js for the
+   * math). Gates itself off rather than showing a confident-looking number
+   * with nothing behind it.
+   */
+  function renderRepairAge(){
+    var veh = v();
+    var panel = document.getElementById('repairAgePanel');
+    var report = D.repairAgeReport(veh);
+    if (!report.available){
+      var msg = report.reason === 'no_year'
+        ? 'Add this vehicle\'s model year above to unlock Repair Age.'
+        : 'Not enough logged history yet. Repair Age needs signal from at least 3 of: service schedule, fault codes, insurance claims, mileage pace, fuel efficiency — currently tracking '+(report.signalPoints||0)+' of 5.';
+      panel.innerHTML = '<h2 style="margin-bottom:4px">Repair Age</h2>'+
+        '<div class="muted" style="font-size:12.5px;margin-bottom:8px">Condition age vs. calendar age, built from this vehicle\'s own history.</div>'+
+        '<p class="empty-note">'+D.esc(msg)+'</p>';
+      return;
+    }
+    var diff = report.delta;
+    var pillStatus = Math.abs(diff) < 0.3 ? 'none' : (diff <= 0 ? 'ok' : (diff >= 1.5 ? 'overdue' : 'soon'));
+    var diffLabel = Math.abs(diff) < 0.3
+      ? 'On pace with its age'
+      : (diff > 0
+          ? 'Aging '+Math.abs(diff).toFixed(1)+' yr'+(Math.abs(diff)===1?'':'s')+' harder than the calendar says'
+          : 'Holding up '+Math.abs(diff).toFixed(1)+' yr'+(Math.abs(diff)===1?'':'s')+' younger than the calendar says');
+    panel.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px">'+
+      '<div><h2 style="margin-bottom:2px">Repair Age</h2>'+
+      '<div class="muted" style="font-size:12.5px;max-width:46ch">Condition age vs. calendar age, from this vehicle\'s own service, fault-code, claim, mileage and fuel-efficiency history.</div></div>'+
+      pill(pillStatus, diffLabel)+
+      '</div>'+
+      '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:14px">'+
+      '<div class="stat" style="flex:1;min-width:140px"><div class="n">'+report.chronologicalAge+'</div><div class="l">Calendar age (yrs)</div></div>'+
+      '<div class="stat" style="flex:1;min-width:140px"><div class="n">'+report.repairAge+'</div><div class="l">Repair age (yrs)</div></div>'+
+      '</div>'+
+      '<details style="margin-top:12px">'+
+      '<summary style="cursor:pointer;font-size:12.5px;color:var(--muted);font-weight:700">What\'s behind this ('+report.signalPoints+' signal'+(report.signalPoints===1?'':'s')+')</summary>'+
+      '<div style="margin-top:6px">'+
+      report.signals.map(function(s){
+        var d = s.delta;
+        var sLabel = Math.abs(d) < 0.05 ? 'neutral' : ((d>0?'+':'')+d.toFixed(1)+' yr'+(Math.abs(d)===1?'':'s'));
+        var sStatus = Math.abs(d) < 0.05 ? 'none' : (d > 0 ? (d>=1?'overdue':'soon') : 'ok');
+        return '<div class="due-item">'+pill(sStatus, sLabel)+
+          '<div style="flex:1"><div class="t">'+D.esc(s.label)+'</div><div class="d">'+D.esc(s.detail)+'</div></div></div>';
+      }).join('')+
+      '</div></details>';
+  }
+
+  function renderDue(){
+    var veh=v();
+    var list = D.vehicleDueList(veh);
+    document.getElementById('dueListPanel').innerHTML = '<h2>Service Schedule</h2>' + (list.length ? list.map(function(d){
+      return '<div class="due-item">'+pill(d.status, d.status==='none'?'No history':d.status)+
+        '<div style="flex:1"><div class="t">'+D.esc(d.type)+'</div><div class="d">'+
+        (d.status==='none' ? 'Never logged — using the '+ (D.makeScheduleLabel(veh)||'generic') +' schedule' : D.dueDetail(d))+'</div></div></div>';
+    }).join('') : '<p class="empty-note">No service types tracked yet — log one below.</p>');
+  }
+
+  function renderIntervalEditor(){
+    var veh=v();
+    document.getElementById('severeDuty').checked = veh.duty==='severe';
+    var types = D.serviceTypesFor(veh);
+    document.getElementById('intervalEditor').innerHTML = types.map(function(t){
+      var iv = D.serviceInterval(veh, t);
+      var src = D.intervalSource(veh, t);
+      return '<div class="row"><div style="flex:1"><b>'+D.esc(t)+'</b> <span class="muted" style="font-size:11px">('+src+')</span></div>'+
+        '<input data-type="'+D.esc(t)+'" data-field="miles" type="number" style="width:90px" placeholder="mi" value="'+(iv.miles||'')+'">'+
+        '<input data-type="'+D.esc(t)+'" data-field="months" type="number" style="width:80px" placeholder="mo" value="'+(iv.months||'')+'">'+
+        '</div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#intervalEditor input'), function(inp){
+      inp.addEventListener('change', function(){
+        var type=this.dataset.type, field=this.dataset.field;
+        veh.intervals[type] = veh.intervals[type] || {};
+        veh.intervals[type][field] = this.value===''? null : Number(this.value);
+        D.scheduleSave(); renderDue(); renderIntervalEditor();
+      });
+    });
+    document.getElementById('severeDuty').addEventListener('change', function(){
+      veh.duty = this.checked ? 'severe':'normal';
+      D.scheduleSave(); renderDue(); renderIntervalEditor();
+    }, {once:true});
+  }
+
+  function renderProviderOptions(){
+    var sel=document.getElementById('svcProvider');
+    var providers = D.getState().providers;
+    sel.innerHTML = '<option value="">Self / DIY</option>' + providers.map(function(p){
+      return '<option value="'+p.id+'">'+D.esc(p.name)+'</option>';
+    }).join('');
+  }
+
+  function renderSvcTable(){
+    var veh=v();
+    var rows = (veh.maintenance||[]).slice().sort(function(a,b){return a.date<b.date?1:-1;});
+    document.getElementById('svcCount').textContent = '('+rows.length+' logged)';
+    document.getElementById('svcTable').querySelector('tbody').innerHTML = rows.map(function(r){
+      var p = r.providerId ? D.getProvider(r.providerId) : null;
+      return '<tr><td>'+D.fmtDate(r.date)+'</td><td>'+D.esc(r.type)+(r.diy?' <span class="muted">(DIY)</span>':'')+'</td><td>'+D.fmtMiles(r.mileage)+'</td><td>'+(r.cost!=null?D.fmtMoney(r.cost):'—')+'</td><td>'+(p?D.esc(p.name):'—')+'</td>'+
+        '<td><button class="btn sm danger" data-id="'+r.id+'">Delete</button></td></tr>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#svcTable [data-id]'), function(btn){
+      btn.addEventListener('click', function(){
+        D.removeMaintenance(veh, this.dataset.id); D.scheduleSave(); renderAll();
+      });
+    });
+    var dl = document.getElementById('svcTypes');
+    dl.innerHTML = D.LOG_TYPE_SUGGESTIONS.map(function(t){ return '<option value="'+t+'">'; }).join('');
+  }
+
+  function renderFuel(){
+    var veh=v();
+    var stats = D.fuelStats(veh);
+    document.getElementById('fuelStats').innerHTML =
+      '<div class="stat"><div class="n">'+(stats.avg?stats.avg.toFixed(1):'—')+'</div><div class="l">Avg '+stats.unit+'</div></div>'+
+      '<div class="stat"><div class="n">'+(stats.last?stats.last.toFixed(1):'—')+'</div><div class="l">Last fill '+stats.unit+'</div></div>'+
+      '<div class="stat"><div class="n">'+D.fmtMoney(stats.totalSpend)+'</div><div class="l">Total fuel spend</div></div>';
+    var rows = D.fuelEntries(veh);
+    document.getElementById('fuelTable').querySelector('tbody').innerHTML = rows.map(function(r){
+      var amt = r.gallons ? r.gallons+' gal' : (r.kwh ? r.kwh+' kWh' : '—');
+      return '<tr><td>'+D.fmtDate(r.date)+'</td><td>'+D.fmtMiles(r.mileage)+'</td><td>'+amt+'</td><td>'+(r.price!=null?D.fmtMoney(r.price):'—')+'</td><td>'+(r.full?'Yes':'Partial')+'</td>'+
+        '<td><button class="btn sm danger" data-id="'+r.id+'">Delete</button></td></tr>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#fuelTable [data-id]'), function(btn){
+      btn.addEventListener('click', function(){ D.removeFuelEntry(veh,this.dataset.id); D.scheduleSave(); renderFuel(); renderRepairAge(); });
+    });
+  }
+
+  function renderParts(){
+    var veh=v();
+    var parts = veh.parts||[];
+    document.getElementById('partsEmpty').style.display = parts.length?'none':'block';
+    document.getElementById('partsList').innerHTML = parts.map(function(p){
+      var st = D.partStatus(p, veh);
+      return '<div class="due-item">'+pill(st.status)+'<div style="flex:1"><div class="t">'+D.esc(p.name)+(p.brand?' — '+D.esc(p.brand):'')+'</div>'+
+        '<div class="d">Installed '+D.fmtDate(p.installedDate)+' at '+D.fmtMiles(p.installedMileage)+(p.cost?' · '+D.fmtMoney(p.cost):'')+'</div></div>'+
+        '<button class="btn sm danger" data-id="'+p.id+'">Delete</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#partsList [data-id]'), function(btn){
+      btn.addEventListener('click', function(){ D.removePart(veh,this.dataset.id); D.scheduleSave(); renderParts(); });
+    });
+
+    var tires = veh.tires||[];
+    document.getElementById('tiresEmpty').style.display = tires.length?'none':'block';
+    document.getElementById('tiresList').innerHTML = tires.map(function(t){
+      var st = D.tireWearStatus(t);
+      return '<div class="due-item">'+pill(st.status, st.depth!=null?st.depth+'/32"':'untracked')+
+        '<div style="flex:1"><div class="t">'+D.esc(t.position)+(t.brand?' — '+D.esc(t.brand):'')+'</div>'+
+        '<div class="d">Installed '+D.fmtDate(t.installedDate)+' at '+D.fmtMiles(t.installedMileage)+'</div>'+
+        '<div style="margin-top:6px;display:flex;gap:6px"><input type="number" placeholder="tread /32&quot;" style="width:110px" data-tread="'+t.id+'">'+
+        '<button class="btn sm" data-log="'+t.id+'">Log tread</button></div></div>'+
+        '<button class="btn sm danger" data-id="'+t.id+'">Delete</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#tiresList [data-id]'), function(btn){
+      btn.addEventListener('click', function(){ D.removeTire(veh,this.dataset.id); D.scheduleSave(); renderParts(); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#tiresList [data-log]'), function(btn){
+      btn.addEventListener('click', function(){
+        var id=this.dataset.log;
+        var input=document.querySelector('[data-tread="'+id+'"]');
+        var t = tires.filter(function(x){return x.id===id;})[0];
+        if(t && input.value!==''){ D.addTreadReading(t, D.todayKey(), input.value); D.scheduleSave(); renderParts(); }
+      });
+    });
+  }
+
+  function renderDocs(){
+    var veh=v();
+    var docs = veh.documents||[];
+    document.getElementById('docsEmpty').style.display = docs.length?'none':'block';
+    document.getElementById('docsList').innerHTML = docs.map(function(d){
+      var st = D.documentStatus(d);
+      return '<div class="due-item">'+pill(st.status==='untracked'?'none':st.status, st.status==='untracked'?'no expiry':st.status)+
+        '<div style="flex:1"><div class="t">'+D.esc(d.name)+' <span class="muted" style="font-size:11px">('+d.category+')</span></div>'+
+        '<div class="d">'+(d.expiresOn?'Expires '+D.fmtDate(d.expiresOn):'No expiry set')+(d.dataUrl?' · <a href="'+d.dataUrl+'" target="_blank">view file</a>':'')+'</div></div>'+
+        '<button class="btn sm danger" data-id="'+d.id+'">Delete</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#docsList [data-id]'), function(btn){
+      btn.addEventListener('click', function(){ D.removeDocument(veh,this.dataset.id); D.scheduleSave(); renderDocs(); });
+    });
+  }
+
+  function renderWarranties(){
+    var veh=v();
+    var list = veh.warranties||[];
+    document.getElementById('warrEmpty').style.display = list.length?'none':'block';
+    document.getElementById('warrList').innerHTML = list.map(function(w){
+      var st = D.warrantyStatus(w, veh);
+      return '<div class="due-item">'+pill(st.status==='untracked'?'none':st.status)+
+        '<div style="flex:1"><div class="t">'+D.esc(w.name)+(w.provider?' — '+D.esc(w.provider):'')+'</div>'+
+        '<div class="d">'+D.dueDetail(st)+'</div></div>'+
+        '<button class="btn sm danger" data-id="'+w.id+'">Delete</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#warrList [data-id]'), function(btn){
+      btn.addEventListener('click', function(){ D.removeWarranty(veh,this.dataset.id); D.scheduleSave(); renderWarranties(); });
+    });
+  }
+
+  var CLAIM_LABELS = { accident:'Accident', theft:'Theft', glass:'Glass', weather:'Weather', liability:'Liability', other:'Other' };
+  var CLAIM_PILL = { filed:'none', approved:'ok', denied:'overdue', closed:'none' };
+  function renderClaims(){
+    var veh=v();
+    var list = (veh.insuranceClaims||[]).slice().sort(function(a,b){ return a.date<b.date?1:-1; });
+    document.getElementById('claimEmpty').style.display = list.length?'none':'block';
+    document.getElementById('claimList').innerHTML = list.map(function(c){
+      var amounts = [];
+      if(c.claimedAmount!=null) amounts.push('Claimed '+D.fmtMoney(c.claimedAmount));
+      if(c.deductible!=null) amounts.push('Deductible '+D.fmtMoney(c.deductible));
+      if(c.paidAmount!=null) amounts.push('Paid '+D.fmtMoney(c.paidAmount));
+      return '<div class="due-item">'+pill(CLAIM_PILL[c.status]||'none', c.status)+
+        '<div style="flex:1"><div class="t">'+D.fmtDate(c.date)+' — '+D.esc(CLAIM_LABELS[c.category]||c.category)+(c.insurer?' · '+D.esc(c.insurer):'')+'</div>'+
+        '<div class="d">'+D.esc(c.description)+'</div>'+
+        (amounts.length?'<div class="d">'+amounts.join('  ·  ')+'</div>':'')+'</div>'+
+        '<button class="btn sm danger" data-id="'+c.id+'">Delete</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#claimList [data-id]'), function(btn){
+      btn.addEventListener('click', function(){ D.removeInsuranceClaim(veh,this.dataset.id); D.scheduleSave(); renderClaims(); renderRepairAge(); });
+    });
+  }
+
+  function renderCost(){
+    var veh=v();
+    var oc = D.ownershipCost(veh);
+    document.getElementById('costSummary').innerHTML = oc ?
+      '<div class="grid cols-3">'+
+      '<div class="stat"><div class="n">'+D.fmtMoney(oc.perMile,2)+'</div><div class="l">Total per mile</div></div>'+
+      '<div class="stat"><div class="n">'+D.fmtMoney(oc.depPerMile,2)+'</div><div class="l">Depreciation/mi</div></div>'+
+      '<div class="stat"><div class="n">'+D.fmtMoney(oc.fuelPerMile,2)+'</div><div class="l">Fuel/mi</div></div>'+
+      '<div class="stat"><div class="n">'+D.fmtMoney(oc.upkeepPerMile,2)+'</div><div class="l">Maintenance+parts/mi</div></div>'+
+      '<div class="stat"><div class="n">'+D.fmtMiles(oc.milesDriven)+'</div><div class="l">Driven since purchase</div></div>'+
+      '<div class="stat"><div class="n">'+D.fmtMoney(oc.total)+'</div><div class="l">Total cost so far</div></div></div>'
+      : '<p class="empty-note">Add a purchase price and mileage-when-bought on the dashboard\'s Add Vehicle form (edit coming from there) to unlock this.</p>';
+    var rows = D.valuations(veh);
+    document.getElementById('valTable').querySelector('tbody').innerHTML = rows.map(function(r){
+      return '<tr><td>'+D.fmtDate(r.date)+'</td><td>'+D.fmtMoney(r.value)+'</td></tr>';
+    }).join('');
+  }
+
+  // ---- Trips ---------------------------------------------------------
+  function renderTripSupport(){
+    var sup = D.gpsSupport();
+    var panel = document.getElementById('tripSupportPanel');
+    if(sup.available){ panel.style.display='none'; document.getElementById('tripStartBtn').disabled=false; return; }
+    panel.style.display='block';
+    panel.innerHTML = '<p class="empty-note" style="padding:0">Location isn\'t available on this page — it needs a secure (HTTPS) connection, which a locally opened file can\'t provide. This works once the app is hosted (for example, on Netlify).</p>';
+    document.getElementById('tripStartBtn').disabled = true;
+  }
+  /**
+   * Offers to bump the odometer from GPS trip data logged since the last
+   * confirmed reading — a nudge, not an automatic overwrite. The vehicle
+   * header's own "Update odometer" field always wins if you'd rather just
+   * type the real number off the dash.
+   */
+  function renderMileageSuggestion(){
+    var veh = v();
+    var panel = document.getElementById('mileageSuggestPanel');
+    var s = D.suggestedMileage(veh);
+    if (!s){ panel.style.display='none'; panel.innerHTML=''; return; }
+    panel.style.display='block';
+    panel.innerHTML =
+      '<h2 style="margin-bottom:4px">Odometer suggestion</h2>'+
+      '<p class="muted" style="font-size:12.5px;margin-bottom:10px">Based on '+s.tripCount+' logged trip'+(s.tripCount===1?'':'s')+' since your last confirmed reading, this vehicle has covered roughly '+D.fmtMiles(s.addedMiles)+' more. GPS drifts a little — treat this as a nudge, not the real odometer.</p>'+
+      '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">'+
+      '<div class="stat" style="flex:1;min-width:140px"><div class="n">'+D.fmtMiles(s.suggested)+'</div><div class="l">Suggested reading</div></div>'+
+      '<button class="btn primary" id="acceptSuggestedMileageBtn" type="button">Use this reading</button>'+
+      '</div>';
+    document.getElementById('acceptSuggestedMileageBtn').addEventListener('click', function(){
+      D.recordMileage(veh, s.suggested, D.todayKey(), true);
+      D.scheduleSave(); renderAll();
+      toast('Odometer updated from trip data');
+    });
+  }
+
+  function renderTrips(){
+    var veh=v();
+    var trips = (veh.trips||[]).slice().sort(function(a,b){return a.date<b.date?1:-1;});
+    document.getElementById('tripCount').textContent = '('+trips.length+' logged)';
+    document.getElementById('tripsEmpty').style.display = trips.length?'none':'block';
+    document.getElementById('tripsList').innerHTML = trips.map(function(t){
+      var pts = D.tripRoutePoints(t.path, 90, 54);
+      var svg = pts.length>1
+        ? '<svg width="90" height="54" viewBox="0 0 90 54" style="background:var(--input-bg);border-radius:6px;flex-shrink:0"><polyline points="'+pts.map(function(p){return p[0]+','+p[1];}).join(' ')+'" fill="none" style="stroke:var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        : '<div style="width:90px;height:54px;background:var(--input-bg);border-radius:6px;flex-shrink:0"></div>';
+      var mins = Math.round((t.durationSec||0)/60);
+      return '<div class="due-item">'+svg+
+        '<div style="flex:1"><div class="t">'+t.distanceMiles.toFixed(1)+' mi <span class="muted" style="font-weight:400">· '+mins+' min · '+t.avgMph.toFixed(0)+' mph avg</span></div>'+
+        '<div class="d">'+D.fmtDate(t.date)+'</div>'+
+        '<input data-purpose="'+t.id+'" placeholder="Purpose (optional)" value="'+D.esc(t.purpose||'')+'" style="margin-top:6px;max-width:260px">'+
+        '</div><button class="btn sm danger" data-id="'+t.id+'">Delete</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#tripsList [data-id]'), function(btn){
+      btn.addEventListener('click', function(){ D.removeTrip(veh,this.dataset.id); D.scheduleSave(); renderTrips(); renderMileageSuggestion(); });
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('#tripsList [data-purpose]'), function(inp){
+      var id = inp.dataset.purpose;
+      inp.addEventListener('change', function(){
+        var t = (veh.trips||[]).filter(function(x){return x.id===id;})[0];
+        if(t){ t.purpose = inp.value; D.scheduleSave(); }
+      });
+    });
+  }
+  function fmtElapsed(ms){
+    var s = Math.floor(ms/1000); var m = Math.floor(s/60); s = s%60;
+    return m+':'+(s<10?'0':'')+s;
+  }
+  function updateTripLive(snap){
+    if(!snap) return;
+    if(snap.error){ toast('Location error: '+snap.error); return; }
+    document.getElementById('tripLiveMiles').textContent = snap.distanceMiles.toFixed(2);
+    document.getElementById('tripLiveTime').textContent = fmtElapsed(snap.elapsedMs);
+    document.getElementById('tripLivePoints').textContent = snap.points;
+  }
+
+  // ---- OBD2 ------------------------------------------------------------
+  var obdLiveTimer = null;
+  function renderObdSupport(){
+    var sup = D.obdSupport();
+    var panel = document.getElementById('obdSupportPanel');
+    if(sup.available){ panel.style.display='none'; return; }
+    panel.style.display='block';
+    panel.innerHTML = '<p class="empty-note" style="padding:0">Bluetooth isn\'t available on this page — it needs Chrome or Edge and a secure (HTTPS) connection, which a locally opened file can\'t provide.</p>';
+    document.getElementById('obdConnectBtn').disabled = true;
+  }
+  function renderGauges(reading){
+    document.getElementById('obdGauges').innerHTML =
+      '<div class="stat"><div class="n">'+(reading.rpm!=null?reading.rpm.toLocaleString():'—')+'</div><div class="l">RPM</div></div>'+
+      '<div class="stat"><div class="n">'+(reading.speedMph!=null?reading.speedMph:'—')+'</div><div class="l">Speed (mph)</div></div>'+
+      '<div class="stat"><div class="n">'+(reading.coolantF!=null?reading.coolantF+'°F':'—')+'</div><div class="l">Coolant</div></div>'+
+      '<div class="stat"><div class="n">'+(reading.fuelPct!=null?reading.fuelPct+'%':'—')+'</div><div class="l">Fuel</div></div>';
+  }
+  function stopObdLive(){
+    clearInterval(obdLiveTimer); obdLiveTimer=null;
+    var btn = document.getElementById('obdLiveToggleBtn');
+    if(btn) btn.textContent='Start live read';
+  }
+  function renderDtcList(codes){
+    var panel = document.getElementById('obdDtcList');
+    if(!codes || !codes.length){ panel.innerHTML = '<p class="empty-note" style="padding:0">No stored trouble codes.</p>'; return; }
+    panel.innerHTML = codes.map(function(c){
+      return '<div class="due-item">'+pill('overdue','DTC')+'<div style="flex:1"><div class="t">'+D.esc(c.code)+'</div>'+
+        '<div class="d">'+(c.description?D.esc(c.description):'Not in the built-in list — look this code up online.')+'</div></div></div>';
+    }).join('');
+  }
+  function renderDtcEvents(){
+    var veh=v();
+    var events = veh.dtcEvents||[];
+    document.getElementById('dtcEventCount').textContent = '('+events.length+')';
+    document.getElementById('dtcEventsEmpty').style.display = events.length?'none':'block';
+    document.getElementById('dtcEventsList').innerHTML = events.map(function(e){
+      var label = e.action==='clear' ? 'Cleared codes' : (e.codes.length ? e.codes.join(', ') : 'No codes found');
+      return '<div class="due-item"><div style="flex:1"><div class="t">'+D.esc(label)+'</div><div class="d">'+D.fmtDate(e.at.slice(0,10))+'</div></div></div>';
+    }).join('');
+  }
+
+  function renderPrintArea(){
+    var veh=v();
+    var rows = (veh.maintenance||[]).slice().sort(function(a,b){return a.date<b.date?-1:1;});
+    var total = rows.reduce(function(a,r){return a+(Number(r.cost)||0);},0);
+    document.getElementById('printArea').innerHTML =
+      '<h1>'+D.esc(D.vehicleTitle(veh))+'</h1>'+
+      '<p>VIN: '+D.esc(veh.vin||'—')+' · Odometer: '+D.fmtMiles(veh.mileage)+' · Purchased at: '+D.fmtMiles(veh.purchaseMileage||0)+'</p>'+
+      '<table><thead><tr><th>Date</th><th>Service</th><th>Odometer</th><th>Cost</th><th>Notes</th></tr></thead><tbody>'+
+      rows.map(function(r){ return '<tr><td>'+D.fmtDate(r.date)+'</td><td>'+D.esc(r.type)+'</td><td>'+D.fmtMiles(r.mileage)+'</td><td>'+(r.cost!=null?D.fmtMoney(r.cost):'—')+'</td><td>'+D.esc(r.notes||'')+'</td></tr>'; }).join('')+
+      '</tbody></table><p><b>Total logged: '+D.fmtMoney(total)+'</b></p>'+
+      '<p style="font-size:11px;color:#555">Entries are self-reported by the vehicle owner and are not dealer invoices.</p>';
+  }
+
+  function renderAll(){
+    renderHeader(); renderRepairAge(); renderDue(); renderIntervalEditor(); renderProviderOptions(); renderSvcTable();
+    renderFuel(); renderParts(); renderDocs(); renderWarranties(); renderClaims(); renderCost();
+    renderTripSupport(); renderTrips(); renderMileageSuggestion(); renderObdSupport(); renderDtcEvents();
+  }
+
+  function wireTabs(){
+    Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function(btn){
+      btn.addEventListener('click', function(){
+        Array.prototype.forEach.call(document.querySelectorAll('.tabs button'), function(b){b.classList.remove('active');});
+        Array.prototype.forEach.call(document.querySelectorAll('.tab-panel'), function(p){p.classList.remove('active');});
+        btn.classList.add('active');
+        document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+      });
+    });
+  }
+
+  function wireForms(){
+    document.getElementById('serviceForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var veh=v();
+      D.addMaintenance(veh, {
+        type: document.getElementById('svcType').value.trim(),
+        date: document.getElementById('svcDate').value || D.todayKey(),
+        mileage: document.getElementById('svcMileage').value,
+        cost: document.getElementById('svcCost').value,
+        notes: document.getElementById('svcNotes').value,
+        providerId: document.getElementById('svcProvider').value || null
+      });
+      D.scheduleSave(); this.reset(); renderAll(); toast('Service logged');
+    });
+
+    document.getElementById('fuelForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var veh=v();
+      D.addFuelEntry(veh, {
+        date: document.getElementById('fuelDate').value || D.todayKey(),
+        mileage: document.getElementById('fuelMileage').value,
+        gallons: document.getElementById('fuelGallons').value,
+        kwh: document.getElementById('fuelKwh').value,
+        price: document.getElementById('fuelPrice').value,
+        full: document.getElementById('fuelFull').checked
+      });
+      D.scheduleSave(); this.reset(); document.getElementById('fuelFull').checked=true; renderFuel(); renderHeader(); renderRepairAge(); toast('Fill-up logged');
+    });
+
+    document.getElementById('partForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var veh=v();
+      D.addPart(veh, {
+        name: document.getElementById('partName').value.trim(), brand: document.getElementById('partBrand').value,
+        installedDate: document.getElementById('partDate').value, installedMileage: document.getElementById('partMileage').value,
+        cost: document.getElementById('partCost').value, expectedLifeMiles: document.getElementById('partLifeMiles').value,
+        expectedLifeMonths: document.getElementById('partLifeMonths').value
+      });
+      D.scheduleSave(); this.reset(); renderParts(); toast('Part saved');
+    });
+
+    document.getElementById('tireForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var veh=v();
+      D.addTire(veh, {
+        position: document.getElementById('tirePosition').value, brand: document.getElementById('tireBrand').value,
+        installedDate: document.getElementById('tireDate').value, installedMileage: document.getElementById('tireMileage').value
+      });
+      D.scheduleSave(); this.reset(); renderParts(); toast('Tires saved');
+    });
+
+    document.getElementById('docForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var veh=v();
+      var file = document.getElementById('docFile').files[0];
+      function save(dataUrl){
+        D.addDocument(veh, { name: document.getElementById('docName').value.trim(), category: document.getElementById('docCategory').value,
+          expiresOn: document.getElementById('docExpires').value, dataUrl: dataUrl });
+        D.scheduleSave(); document.getElementById('docForm').reset(); renderDocs(); toast('Document saved');
+      }
+      if(file){
+        var reader = new FileReader();
+        reader.onload = function(){ save(reader.result); };
+        reader.readAsDataURL(file);
+      } else save(null);
+    });
+
+    document.getElementById('warrantyForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var veh=v();
+      D.addWarranty(veh, {
+        name: document.getElementById('warrName').value.trim(), provider: document.getElementById('warrProvider').value,
+        expiresOn: document.getElementById('warrExpiresOn').value, expiresMileage: document.getElementById('warrExpiresMileage').value,
+        notes: document.getElementById('warrNotes').value
+      });
+      D.scheduleSave(); this.reset(); renderWarranties(); toast('Warranty saved');
+    });
+
+    document.getElementById('claimForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var veh=v();
+      D.addInsuranceClaim(veh, {
+        date: document.getElementById('claimDate').value || D.todayKey(),
+        category: document.getElementById('claimCategory').value,
+        insurer: document.getElementById('claimInsurer').value,
+        status: document.getElementById('claimStatus').value,
+        description: document.getElementById('claimDescription').value.trim(),
+        claimedAmount: document.getElementById('claimClaimedAmount').value,
+        deductible: document.getElementById('claimDeductible').value,
+        paidAmount: document.getElementById('claimPaidAmount').value,
+        notes: document.getElementById('claimNotes').value
+      });
+      D.scheduleSave(); this.reset(); renderClaims(); renderRepairAge(); toast('Claim saved');
+    });
+
+    document.getElementById('valuationForm').addEventListener('submit', function(e){
+      e.preventDefault();
+      var veh=v();
+      D.addValuation(veh, document.getElementById('valAmount').value, document.getElementById('valDate').value || D.todayKey());
+      D.scheduleSave(); this.reset(); renderCost(); toast('Valuation added');
+    });
+
+    document.getElementById('printBtn').addEventListener('click', function(){
+      renderPrintArea();
+      setTimeout(function(){ window.print(); }, 60);
+    });
+    document.getElementById('csvMaintBtn').addEventListener('click', function(){ D.exportMaintenanceCSV(v()); });
+    document.getElementById('csvFuelBtn').addEventListener('click', function(){ D.exportFuelCSV(v()); });
+    document.getElementById('csvPartsBtn').addEventListener('click', function(){ D.exportPartsCSV(v()); });
+    document.getElementById('csvClaimBtn').addEventListener('click', function(){ D.exportInsuranceCSV(v()); });
+  }
+
+  function wireTrips(){
+    document.getElementById('tripStartBtn').addEventListener('click', function(){
+      var res = D.startTrip(updateTripLive);
+      if(!res.ok){ toast(res.message); return; }
+      document.getElementById('tripStartPanel').style.display='none';
+      document.getElementById('tripLivePanel').style.display='block';
+      updateTripLive({ points:0, distanceMiles:0, elapsedMs:0 });
+    });
+    document.getElementById('tripStopBtn').addEventListener('click', function(){
+      var veh=v();
+      var trip = D.stopTrip(veh);
+      D.scheduleSave();
+      document.getElementById('tripLivePanel').style.display='none';
+      document.getElementById('tripStartPanel').style.display='block';
+      renderTrips(); renderHeader(); renderMileageSuggestion();
+      toast(trip ? 'Trip saved — '+trip.distanceMiles.toFixed(1)+' mi' : 'Trip saved');
+    });
+    document.getElementById('tripDiscardBtn').addEventListener('click', function(){
+      D.discardActiveTrip();
+      document.getElementById('tripLivePanel').style.display='none';
+      document.getElementById('tripStartPanel').style.display='block';
+    });
+  }
+
+  function wireObd(){
+    document.getElementById('obdConnectBtn').addEventListener('click', function(){
+      var btn=this; btn.disabled=true; btn.textContent='Connecting…';
+      D.obdConnect().then(function(res){
+        btn.disabled=false; btn.textContent='Connect adapter';
+        if(res.ok){
+          document.getElementById('obdStatus').innerHTML = '<span class="pill ok">Connected</span> '+D.esc(res.name);
+          btn.style.display='none';
+          document.getElementById('obdDisconnectBtn').style.display='inline-block';
+          document.getElementById('obdLivePanel').style.display='block';
+          document.getElementById('obdDtcPanel').style.display='block';
+          toast('Adapter connected');
+        } else {
+          document.getElementById('obdStatus').innerHTML = '<span class="pill overdue">Not connected</span> '+D.esc(res.message||'');
+        }
+      });
+    });
+    document.getElementById('obdDisconnectBtn').addEventListener('click', function(){
+      stopObdLive();
+      D.obdDisconnect();
+      document.getElementById('obdStatus').innerHTML = '<span class="pill none">Disconnected</span>';
+      document.getElementById('obdConnectBtn').style.display='inline-block';
+      document.getElementById('obdDisconnectBtn').style.display='none';
+      document.getElementById('obdLivePanel').style.display='none';
+      document.getElementById('obdDtcPanel').style.display='none';
+    });
+    document.getElementById('obdLiveToggleBtn').addEventListener('click', function(){
+      var btn=this;
+      if(obdLiveTimer){ stopObdLive(); return; }
+      btn.textContent='Stop live read';
+      function poll(){
+        D.obdReadLive().then(function(r){ renderGauges(r); D.addObdReading(v(), r); D.scheduleSave(); })
+          .catch(function(){ toast('Lost contact with the adapter'); stopObdLive(); });
+      }
+      poll();
+      obdLiveTimer = setInterval(poll, 1800);
+    });
+    document.getElementById('obdReadDtcBtn').addEventListener('click', function(){
+      var btn=this; btn.disabled=true; btn.textContent='Reading…';
+      D.obdReadDTCs().then(function(codes){
+        renderDtcList(codes);
+        D.addDtcEvent(v(), { at: new Date().toISOString(), action:'read', codes: codes.map(function(c){return c.code;}) });
+        D.scheduleSave(); renderDtcEvents(); renderRepairAge();
+      }).catch(function(){ toast('Could not read codes'); })
+        .then(function(){ btn.disabled=false; btn.textContent='Read codes'; });
+    });
+    document.getElementById('obdClearDtcBtn').addEventListener('click', function(){
+      if(!confirm('Clear all stored trouble codes? This also resets your emissions readiness monitors, which can affect an inspection until they recomplete.')) return;
+      var btn=this; btn.disabled=true;
+      D.obdClearDTCs().then(function(ok){
+        toast(ok?'Codes cleared':'The adapter did not confirm the clear');
+        D.addDtcEvent(v(), { at: new Date().toISOString(), action:'clear', codes: [] });
+        D.scheduleSave(); renderDtcEvents(); renderDtcList([]); renderRepairAge();
+      }).catch(function(){ toast('Could not clear codes'); })
+        .then(function(){ btn.disabled=false; });
+    });
+  }
+
+  window.addEventListener('beforeunload', function(e){
+    if(D.isTripActive()){ e.preventDefault(); e.returnValue = ''; }
+  });
+
+  D.loadState(function(){
+    if(!v()){ location.href='index.html'; return; }
+    wireTabs(); wireForms(); wireTrips(); wireObd(); renderAll();
+  });
+})();
+</script>
+</body>
+</html>

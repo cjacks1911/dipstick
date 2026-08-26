@@ -1,0 +1,288 @@
+<title>Dipstick Field Notes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#f6f4ef; --surface:#ffffff; --surface2:#eeeae1; --line:#ddd6c8;
+    --text:#201d18; --muted:#6c6558; --accent:#c85a22; --accent-ink:#ffffff;
+    --good:#2f7d5b; --good-bg:#e2efe6; --warn:#8a6a1f; --warn-bg:#f3ecd6;
+    --bad:#a13d3d; --bad-bg:#f4e3e0; --stamp:#c85a22;
+    --radius:10px;
+    font-family:'IBM Plex Sans',system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0d0f12; --surface:#15181c; --surface2:#1b1f24; --line:#262b31;
+      --text:#e9ebee; --muted:#8b929c; --accent:#ff8a3d; --accent-ink:#1a0f05;
+      --good:#3ddc97; --good-bg:#123326; --warn:#ffc94d; --warn-bg:#3a2f10;
+      --bad:#ff5d5d; --bad-bg:#3a1414; --stamp:#ff8a3d;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0d0f12; --surface:#15181c; --surface2:#1b1f24; --line:#262b31;
+    --text:#e9ebee; --muted:#8b929c; --accent:#ff8a3d; --accent-ink:#1a0f05;
+    --good:#3ddc97; --good-bg:#123326; --warn:#ffc94d; --warn-bg:#3a2f10;
+    --bad:#ff5d5d; --bad-bg:#3a1414; --stamp:#ff8a3d;
+  }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);line-height:1.55;
+    text-rendering:optimizeLegibility;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:980px;margin:0 auto;padding:0 24px}
+  ::selection{background:var(--accent);color:var(--accent-ink)}
+
+  h1,h2,h3{font-family:'Big Shoulders Display',sans-serif;font-weight:800;
+    text-transform:uppercase;letter-spacing:.01em;text-wrap:balance;margin:0}
+  .mono{font-family:'IBM Plex Mono',monospace}
+  .num{font-variant-numeric:tabular-nums}
+
+  header.masthead{border-bottom:3px solid var(--text);padding:40px 0 26px}
+  .masthead-row{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+  .masthead h1{font-size:52px;line-height:.92}
+  .masthead .kicker{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--accent);font-weight:600;margin-bottom:10px}
+  .masthead .meta{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--muted);
+    text-align:right;line-height:1.7}
+  .masthead p.dek{max-width:60ch;color:var(--muted);font-size:16px;margin-top:14px}
+
+  .statline{display:flex;gap:0;border-top:1px solid var(--line);margin-top:22px}
+  .statline div{flex:1;padding:14px 18px 4px;border-left:1px solid var(--line)}
+  .statline div:first-child{border-left:none;padding-left:0}
+  .statline .n{font-family:'Big Shoulders Display',sans-serif;font-size:34px;font-weight:800;line-height:1}
+  .statline .l{font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;
+    letter-spacing:.08em;color:var(--muted);margin-top:4px;display:block}
+
+  main{padding:38px 0 80px}
+  section{margin-bottom:52px}
+  section > .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:18px;
+    border-bottom:2px solid var(--text);padding-bottom:8px}
+  section > .sec-head h2{font-size:26px}
+  section > .sec-head .count{font-family:'IBM Plex Mono',monospace;font-size:12.5px;color:var(--muted)}
+  section > .sec-note{color:var(--muted);max-width:68ch;font-size:14.5px;margin:-6px 0 20px}
+
+  .tag{display:inline-flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;
+    font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;
+    padding:3px 8px;border-radius:4px;white-space:nowrap}
+  .tag.built{background:var(--good-bg);color:var(--good)}
+  .tag.new{background:var(--good-bg);color:var(--good)}
+  .tag.ported{background:var(--surface2);color:var(--muted);border:1px solid var(--line)}
+  .tag.backlog{background:var(--warn-bg);color:var(--warn)}
+  .tag.cut{background:var(--bad-bg);color:var(--bad)}
+
+  /* --- competitor spec cards --- */
+  .comp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px}
+  .comp-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px}
+  .comp-card .name{font-weight:700;font-size:15.5px}
+  .comp-card .price{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--accent);
+    margin-top:2px}
+  .comp-card .gap{font-size:13px;color:var(--muted);margin-top:10px;padding-top:10px;
+    border-top:1px dashed var(--line)}
+  .comp-card .gap b{color:var(--text);font-weight:600}
+
+  /* --- feature ledger (table-as-list) --- */
+  .ledger{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--surface)}
+  .ledger-row{display:grid;grid-template-columns:110px 1fr auto;gap:16px;align-items:center;
+    padding:13px 18px;border-bottom:1px solid var(--line)}
+  .ledger-row:last-child{border-bottom:none}
+  .ledger-row .f-name{font-weight:600;font-size:14.5px}
+  .ledger-row .f-desc{color:var(--muted);font-size:13px;margin-top:2px}
+  .ledger-row .f-source{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)}
+
+  /* --- backlog triage list (interactive, per-viewer only) --- */
+  .triage-row{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;
+    padding:14px 18px;border-bottom:1px solid var(--line)}
+  .triage-row:last-child{border-bottom:none}
+  .triage-row .f-name{font-weight:600;font-size:14.5px}
+  .triage-row .f-desc{color:var(--muted);font-size:13px;margin-top:3px;max-width:56ch}
+  .triage-btns{display:flex;gap:6px;font-family:'IBM Plex Mono',monospace}
+  .triage-btns button{border:1px solid var(--line);background:var(--surface2);color:var(--muted);
+    font-family:inherit;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;
+    padding:6px 11px;border-radius:5px;cursor:pointer}
+  .triage-btns button[data-active="keep"].k,
+  .triage-btns button[data-active="cut"].c,
+  .triage-btns button[data-active="later"].l{color:var(--accent-ink)}
+  .triage-btns button.k[data-on="1"]{background:var(--good);border-color:var(--good);color:#08130d}
+  .triage-btns button.l[data-on="1"]{background:var(--warn);border-color:var(--warn);color:#1a1300}
+  .triage-btns button.c[data-on="1"]{background:var(--bad);border-color:var(--bad);color:#1a0505}
+
+  .stamp-block{display:flex;align-items:flex-start;gap:16px;background:var(--surface);
+    border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+  .stamp-block .mark{font-family:'Big Shoulders Display',sans-serif;font-weight:800;
+    font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--stamp);
+    border:2px solid var(--stamp);border-radius:6px;padding:6px 10px;flex-shrink:0;
+    transform:rotate(-2deg)}
+  .stamp-block p{margin:0;font-size:14px;color:var(--muted)}
+  .stamp-block b{color:var(--text)}
+
+  footer{border-top:1px solid var(--line);padding:22px 0 40px;color:var(--muted);
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px}
+
+  @media (max-width:640px){
+    .masthead-row{flex-direction:column;align-items:flex-start}
+    .masthead .meta{text-align:left}
+    .masthead h1{font-size:38px}
+    .statline{flex-wrap:wrap}
+    .statline div{flex:1 1 45%;border-left:none;border-top:1px solid var(--line);padding-top:12px}
+    .ledger-row{grid-template-columns:1fr;gap:4px}
+    .ledger-row .f-source{display:none}
+  }
+</style>
+
+<header class="masthead">
+  <div class="wrap">
+    <div class="masthead-row">
+      <div>
+        <div class="kicker">Field notes — v1 build</div>
+        <h1>What's in the garage,<br>what's on the bench.</h1>
+        <p class="dek">A scan of six competing maintenance apps, what Dipstick shipped in its first pass, and what's sitting on the bench for you to keep or scrap. Nothing below is final — that's the point. <b>v1.1:</b> moving off a local file onto real HTTPS hosting unlocked two more — GPS trip logging and Bluetooth OBD2 diagnostics — both blocked by the browser itself until now, not by anything this app chose to leave out. <b>v1.2:</b> a light/dark theme toggle, off the bench. <b>v1.3:</b> an insurance claim log, also off the bench. <b>v1.4:</b> parts inventory with low-stock alerts, off the bench too. <b>v1.5:</b> multi-currency support. <b>v1.6:</b> a fleet-wide spend chart. <b>v1.7:</b> Repair Age — not off this bench at all, not modeled on any competitor here; see the write-up below. <b>v1.8:</b> mileage check-ins and a GPS-based odometer suggestion, because every reminder in the app — Repair Age included — is only as honest as the odometer figure behind it.</p>
+      </div>
+      <div class="meta">
+        DIPSTICK / GARAGE LOG<br>
+        REV. 26 AUG 2026 · v1.8<br>
+        RESEARCH: 6 APPS SCANNED
+      </div>
+    </div>
+    <div class="statline mono">
+      <div><span class="n num">6</span><span class="l">Apps reviewed</span></div>
+      <div><span class="n num">17</span><span class="l">Ported, proven engine</span></div>
+      <div><span class="n num">17</span><span class="l">New this pass</span></div>
+      <div><span class="n num">3</span><span class="l">Deliberately cut</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <section>
+    <div class="sec-head"><h2>The Competition</h2><span class="count mono">6 apps · pricing &amp; the gap each one leaves</span></div>
+    <p class="sec-note">Pulled from product pages and side-by-side reviews in August 2026. "Gap" is the complaint or missing piece that shows up across multiple independent write-ups, not a guess.</p>
+    <div class="comp-grid">
+      <div class="comp-card">
+        <div class="name">CARFAX Car Care</div>
+        <div class="price">Free · 50M+ users</div>
+        <div class="gap"><b>Gap:</b> rigid intervals (tire rotation locked to 5k/7.5k), penalizes independent shops with a "well-maintained badge" system, edits silently revert to "Self Service."</div>
+      </div>
+      <div class="comp-card">
+        <div class="name">Drivvo</div>
+        <div class="price">Free + Premium subscription</div>
+        <div class="gap"><b>Gap:</b> no part-number tracking or photo attachments; cloud sync gated behind premium; a recent price hike drew complaints.</div>
+      </div>
+      <div class="comp-card">
+        <div class="name">Simply Auto</div>
+        <div class="price">Free + $0.99–9.99/mo</div>
+        <div class="gap"><b>Gap:</b> no parts inventory, no AI/diagnosis; interface reviewers called "utilitarian" and "dated."</div>
+      </div>
+      <div class="comp-card">
+        <div class="name">Fuelly / aCar</div>
+        <div class="price">Free + Pro tier</div>
+        <div class="gap"><b>Gap:</b> fuel-tracking specialists — basic reminders only, no parts, no photos, not a service replacement.</div>
+      </div>
+      <div class="comp-card">
+        <div class="name">AUTOsist</div>
+        <div class="price">Free (1 car) · fleet tiers beyond</div>
+        <div class="gap"><b>Gap:</b> built for fleets — dash cams, driver scoring, DOT inspections. Personal-garage features (documents, parts) are buried under compliance tooling.</div>
+      </div>
+      <div class="comp-card">
+        <div class="name">FIXD / OBDeleven</div>
+        <div class="price">Free app + $20–200 hardware</div>
+        <div class="gap"><b>Gap:</b> real diagnostics, but only with a Bluetooth dongle in the car — nothing works without buying hardware first.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Shipped in v1</h2><span class="count mono">20 highlights shown · full list in the app</span></div>
+    <p class="sec-note"><span class="tag ported">Ported</span> came from HUSLLYFE's Garage page, already tested there. <span class="tag new">New</span> was built for this pass, in direct response to a gap above.</p>
+    <div class="ledger">
+      <div class="ledger-row"><div><span class="tag ported">Ported</span></div><div><div class="f-name">Make-specific service intervals</div><div class="f-desc">~20 marques, editable, severe-duty scaling — the direct fix for CARFAX's locked 5k/7.5k rotation complaint.</div></div><div class="f-source">vs. CARFAX rigidity</div></div>
+      <div class="ledger-row"><div><span class="tag ported">Ported</span></div><div><div class="f-name">VIN decode + safety recalls</div><div class="f-desc">NHTSA's free database — year/make/model autofill and open-campaign checks, cached with the fetch date.</div></div><div class="f-source">nhtsa.gov, no key</div></div>
+      <div class="ledger-row"><div><span class="tag ported">Ported</span></div><div><div class="f-name">Due tracking, whichever comes first</div><div class="f-desc">Mileage and time both watched; "due soon" at 10% of interval remaining; due-date projected from your own logged odometer pace.</div></div><div class="f-source">core engine</div></div>
+      <div class="ledger-row"><div><span class="tag ported">Ported</span></div><div><div class="f-name">One-page printable service record</div><div class="f-desc">Full history, totals, a plain disclaimer that entries are self-reported.</div></div><div class="f-source">core engine</div></div>
+      <div class="ledger-row"><div><span class="tag ported">Ported</span></div><div><div class="f-name">Reminders: in-app + opt-in push</div><div class="f-desc">Always-accurate panel is the source of truth; browser notifications are a convenience layered on top, grouped, never one per item.</div></div><div class="f-source">core engine</div></div>
+      <div class="ledger-row"><div><span class="tag new">New</span></div><div><div class="f-name">Fuel log with real-world MPG</div><div class="f-desc">Computed only between consecutive full fill-ups, the same rule Fuelly and Drivvo use — a partial fill can't be measured honestly.</div></div><div class="f-source">vs. Fuelly / Drivvo</div></div>
+      <div class="ledger-row"><div><span class="tag new">New</span></div><div><div class="f-name">True cost of ownership per mile</div><div class="f-desc">Depreciation plus every logged dollar — maintenance, parts, and fuel together. None of the six competitors combine all three.</div></div><div class="f-source">gap across all six</div></div>
+      <div class="ledger-row"><div><span class="tag new">New</span></div><div><div class="f-name">Document vault</div><div class="f-desc">Registration, insurance, title, warranty booklet — stored on-device, with an optional expiry that feeds reminders.</div></div><div class="f-source">vs. AUTOsist doc mgmt</div></div>
+      <div class="ledger-row"><div><span class="tag new">New</span></div><div><div class="f-name">Warranty tracker</div><div class="f-desc">Expires by date or mileage, whichever bites first; surfaces in the same reminder feed as service.</div></div><div class="f-source">gap across all six</div></div>
+      <div class="ledger-row"><div><span class="tag new">New</span></div><div><div class="f-name">Parts &amp; tire tread tracking</div><div class="f-desc">Install date/mileage plus expected life; tread-depth log flags a replace-soon at 4/32", overdue at 2/32".</div></div><div class="f-source">vs. Drivvo (no parts)</div></div>
+      <div class="ledger-row"><div><span class="tag new">New</span></div><div><div class="f-name">Service provider directory</div><div class="f-desc">A shared shop list across every vehicle — "who did I use last time for this?" answered without digging through receipts.</div></div><div class="f-source">vs. CARFAX shop lock-in</div></div>
+      <div class="ledger-row"><div><span class="tag new">New</span></div><div><div class="f-name">CSV + .ics exports</div><div class="f-desc">Every log exports to CSV; everything currently due exports as a calendar file. No competitor in this scan offered calendar export.</div></div><div class="f-source">not offered anywhere scanned</div></div>
+      <div class="ledger-row"><div><span class="tag new">New</span></div><div><div class="f-name">No badges, no gamification</div><div class="f-desc">A deliberate stance, not a missing feature — reports status, never scolds.</div></div><div class="f-source">vs. CARFAX badge system</div></div>
+      <div class="ledger-row"><div><span class="tag new">New · v1.1</span></div><div><div class="f-name">GPS trip logging</div><div class="f-desc">Start/stop while the tab's open, distance by GPS, a small route sketch. Needs HTTPS — was a dead end on a local file, works now that it's hosted. Foreground-only: no browser tracks location with the tab closed.</div></div><div class="f-source">vs. Simply Auto (scoped down)</div></div>
+      <div class="ledger-row"><div><span class="tag new">New · v1.1</span></div><div><div class="f-name">OBD2 Bluetooth diagnostics</div><div class="f-desc">Live RPM/speed/coolant/fuel, read &amp; clear trouble codes with plain-language descriptions. Also needed HTTPS. BLE adapters only (Vgate iCar Pro BLE, OBDLink, Kiwi 3) — classic $10 ELM327 dongles use Bluetooth Classic and can't be reached from a browser, and it's Chrome/Edge only, never Safari or iOS.</div></div><div class="f-source">vs. FIXD / OBDeleven (BLE only)</div></div>
+      <div class="ledger-row"><div><span class="tag new">New · v1.2</span></div><div><div class="f-name">Light/dark theme toggle</div><div class="f-desc">A sun/moon button in the header switches the whole app between dark and light palettes, remembered per browser. Defaults to matching the OS setting until you pick one explicitly — no flash of the wrong theme on load.</div></div><div class="f-source">off the bench, on request</div></div>
+      <div class="ledger-row"><div><span class="tag new">New · v1.3</span></div><div><div class="f-name">Insurance claim log</div><div class="f-desc">A dedicated record for accidents and claims, kept separate from routine maintenance — category, insurer, what happened, claimed/deductible/paid amounts, and a filed/approved/denied/closed status. CSV export like the other logs.</div></div><div class="f-source">off the bench, on request</div></div>
+      <div class="ledger-row"><div><span class="tag new">New · v1.4</span></div><div><div class="f-name">Parts inventory with low-stock alerts</div><div class="f-desc">Garage-wide stock of spares on the shelf — not tied to one vehicle, unlike the per-vehicle Parts tab which tracks what's already installed. Set a quantity and reorder threshold, adjust with +/- as you use or restock, and it surfaces in the same reminders feed once you're low or out.</div></div><div class="f-source">off the bench, scoped down from AUTOsist's fleet-stock model</div></div>
+      <div class="ledger-row"><div><span class="tag new">New · v1.5</span></div><div><div class="f-name">Multi-currency support</div><div class="f-desc">Pick from 12 common currencies in Settings and every cost across the garage relabels immediately — fleet stats, cost/mile, every log, the printable record. Building it also caught and fixed a real bug: dashboard cost-per-mile was always rounding to $0/mi.</div></div><div class="f-source">off the bench, on request</div></div>
+      <div class="ledger-row"><div><span class="tag new">New · v1.6</span></div><div><div class="f-name">Fleet-wide spend chart</div><div class="f-desc">A 12-month bar chart of maintenance + fuel + parts across every vehicle at once, hand-drawn as inline SVG — no charting library. Complements the per-vehicle lifetime total already on the Cost tab with the "is this trending up" view.</div></div><div class="f-source">off the bench, on request</div></div>
+      <div class="ledger-row"><div><span class="tag new">New · v1.7</span></div><div><div class="f-name">Repair Age</div><div class="f-desc">A car's condition age next to its calendar age — five signals already sitting in your own logs (service adherence, fault codes, insurance claims, mileage pace, fuel-efficiency trend), gated off entirely below 3 of 5 rather than guessing. Nobody in the six scanned apps has anything like it — it's not from the competitor scan, it's Dipstick's own formula. It's also plain JavaScript in a static site, same as everything else here: nothing about it is hidden from view-source, and what makes it worth having was never secrecy — it's that copying the number means copying years of one car's real history, which nobody else has.</div></div><div class="f-source">not off the bench — a new idea, on request</div></div>
+      <div class="ledger-row"><div><span class="tag new">New · v1.8</span></div><div><div class="f-name">Mileage check-ins + GPS odometer suggestion</div><div class="f-desc">Every reminder in this app — service due, Repair Age, mileage pace — is only as honest as the odometer figure behind it, so Dipstick now tracks when that figure was last actually confirmed and nudges again roughly twice a month if it's gone stale, right in the existing "Coming up" feed and its opt-in notifications. The Trips tab's GPS logging now also sums distance since your last confirmed reading and offers a one-click update — a suggestion to confirm, not an automatic overwrite, since GPS drifts a little and only runs while the tab's open.</div></div><div class="f-source">not off the bench — a new idea, on request</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>On the Bench</h2><span class="count mono">mark each — saved on this device only</span></div>
+    <p class="sec-note">Seen in the research, not built yet. Click <span class="tag" style="background:var(--good-bg);color:var(--good)">Keep</span> / <span class="tag" style="background:var(--warn-bg);color:var(--warn)">Later</span> / <span class="tag" style="background:var(--bad-bg);color:var(--bad)">Cut</span> to triage — your picks are remembered on this device the next time you open this page, and nowhere else.</p>
+    <div class="ledger" id="triageList"></div>
+  </section>
+
+  <section>
+    <div class="sec-head"><h2>Deliberately Not Building</h2><span class="count mono">needs a live backend or a commercial data deal</span></div>
+    <div class="stamp-block" style="margin-bottom:12px">
+      <div class="mark">Out of scope</div>
+      <p>Dipstick has no server, by design — the same standing rule HUSLLYFE was built under. Hosting on real HTTPS (Netlify) fixed two earlier cuts that only needed a secure browser context — OBD2 and GPS trip logging moved up to "Shipped." What's left below needs something hosting alone can't provide: a live backend or a data partnership.</p>
+    </div>
+    <div class="ledger">
+      <div class="ledger-row"><div><span class="tag cut">Cut</span></div><div><div class="f-name">Shop-quote marketplace / booking</div><div class="f-desc">Openbay's model needs a live backend matching real shops to real quotes in real time.</div></div><div class="f-source">needs a backend</div></div>
+      <div class="ledger-row"><div><span class="tag cut">Cut</span></div><div><div class="f-name">Fleet-scale compliance tooling</div><div class="f-desc">AUTOsist's dash cams, driver scoring, and DOT inspection forms are built for commercial fleets, not a personal garage.</div></div><div class="f-source">wrong audience</div></div>
+      <div class="ledger-row"><div><span class="tag cut">Cut</span></div><div><div class="f-name">Auto-imported service history</div><div class="f-desc">CARFAX's headline feature depends on a paid data partnership with shops nationwide — the one gap no static site can close.</div></div><div class="f-source">needs a data partnership</div></div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="wrap">
+  DIPSTICK — GARAGE LOG · FIELD NOTES REV. 26 AUG 2026 · v1.8 · TRIAGE MARKS STORED LOCALLY, NOT SYNCED
+</footer>
+
+<script>
+(function(){
+  var ITEMS = [
+    {id:'multiprofile', name:'Multi-profile / household sharing', desc:'HUSLLYFE supports multiple named profiles on one device. Dipstick v1 is single-profile — every vehicle in one garage. Worth it if a household splits cars by driver.'},
+    {id:'diyphotos', name:'DIY project photo log', desc:'GarageHub’s "build plans" idea — before/after photos and a running log for a DIY project, distinct from a routine service record.'},
+    {id:'shareexport', name:'One shareable service-history link', desc:'A read-only link to hand a buyer instead of a PDF attachment — the "documented history" pitch from the original Garage README, adapted for a sale rather than a printout.'},
+  ];
+  var STORAGE_KEY = 'dipstick-backlog-triage-v1';
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); } catch(e) { state = {}; }
+
+  function save(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){} }
+
+  var host = document.getElementById('triageList');
+  host.innerHTML = ITEMS.map(function(it){
+    return '<div class="triage-row"><div><div class="f-name">'+it.name+'</div><div class="f-desc">'+it.desc+'</div></div>'+
+      '<div class="triage-btns" data-id="'+it.id+'">'+
+      '<button class="k" data-val="keep">Keep</button>'+
+      '<button class="l" data-val="later">Later</button>'+
+      '<button class="c" data-val="cut">Cut</button>'+
+      '</div></div>';
+  }).join('');
+
+  function refresh(){
+    Array.prototype.forEach.call(host.querySelectorAll('.triage-btns'), function(group){
+      var id = group.dataset.id;
+      Array.prototype.forEach.call(group.querySelectorAll('button'), function(btn){
+        btn.dataset.on = (state[id] === btn.dataset.val) ? '1' : '0';
+      });
+    });
+  }
+  host.addEventListener('click', function(e){
+    var btn = e.target.closest('button'); if(!btn) return;
+    var group = btn.closest('.triage-btns');
+    var id = group.dataset.id;
+    state[id] = (state[id] === btn.dataset.val) ? null : btn.dataset.val;
+    save(); refresh();
+  });
+  refresh();
+})();
+</script>

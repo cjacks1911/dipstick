@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>(function(){try{var t=localStorage.getItem('dipstick.theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dipstick — Privacy</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0d10">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="index.html"><img class="mark" src="logo-mark.png" alt="Dipstick logo">DIPSTICK<span class="tag">garage log</span></a>
+    <nav><a href="index.html">Dashboard</a><a href="providers.html">Shops</a><a href="privacy.html" class="active">Privacy</a><button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme"></button></nav>
+  </div>
+</header>
+<main><div class="wrap">
+  <div class="panel">
+    <h1>Privacy</h1>
+    <p>Dipstick has no server, no account and no analytics. Every vehicle, service record, fill-up, document, warranty and shop you enter is written to <b>localStorage</b> on this device and nowhere else. Nothing is uploaded, synced, or seen by anyone but you.</p>
+    <h2>The two exceptions</h2>
+    <p>Two features call an outside service, and only when you tap them:</p>
+    <p><b>VIN lookup</b> sends the 17-character VIN you typed to NHTSA's free public vehicle database (vpic.nhtsa.dot.gov) to fill in year/make/model/trim. Only the VIN is sent — no account, no key, nothing about you.</p>
+    <p><b>Recall check</b> sends the year/make/model to NHTSA's recalls API (api.nhtsa.gov) and returns any open safety campaigns. Same terms: no account, no key, nothing about you.</p>
+    <p>Both are optional, both are never called automatically, and everything else on this site works with no internet connection at all.</p>
+    <h2>Backups</h2>
+    <p>The "Download backup" button on the dashboard writes a JSON file to your own downloads folder. That file is the only copy of your data that exists outside this browser's storage — localStorage can be cleared by the browser without warning, so take a backup once you have real records in here.</p>
+    <h2>Deleting your data</h2>
+    <p>Clearing this site's data in your browser (or clearing localStorage) deletes everything Dipstick knows, permanently. There is no server copy to recover it from.</p>
+  </div>
+</div></main>
+<footer><div class="wrap"><span>DIPSTICK — the memory your car doesn't have.</span></div></footer>
+<script src="app.js"></script>
+<script>window.DIPSTICK.initThemeToggle(document.getElementById('themeToggle'));</script>
+</body>
+</html>

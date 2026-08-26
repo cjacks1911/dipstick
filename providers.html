@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<script>(function(){try{var t=localStorage.getItem('dipstick.theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Dipstick — Shops &amp; Providers</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0b0d10">
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="index.html"><img class="mark" src="logo-mark.png" alt="Dipstick logo">DIPSTICK<span class="tag">garage log</span></a>
+    <nav>
+      <a href="index.html">Dashboard</a>
+      <a href="providers.html" class="active">Shops</a>
+      <a href="privacy.html">Privacy</a>
+      <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle theme"></button>
+    </nav>
+  </div>
+</header>
+<main>
+  <div class="wrap">
+    <div class="panel">
+      <h1>Shops &amp; Providers</h1>
+      <p class="muted">A shared directory across every vehicle in your garage — who you used, and where. Assign a shop when you log a service and this answers "who did I use last time for this?" without digging through receipts.</p>
+      <form class="form-grid" id="providerForm">
+        <div class="field"><label>Name</label><input id="pName" placeholder="Joe's Garage" required></div>
+        <div class="field"><label>Phone</label><input id="pPhone" placeholder="optional"></div>
+        <div class="field full"><label>Address / notes</label><input id="pAddress" placeholder="optional"></div>
+        <div class="field"><label>Type</label>
+          <select id="pTag"><option value="independent">Independent</option><option value="dealer">Dealer</option><option value="specialist">Specialist</option><option value="diy">DIY / self</option></select>
+        </div>
+        <div class="field full"><button class="btn primary" type="submit">Add shop</button></div>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>Directory</h2>
+      <div id="providerList"></div>
+      <p class="empty-note" id="providerEmpty" style="display:none">No shops added yet.</p>
+    </div>
+  </div>
+</main>
+<footer><div class="wrap"><span>DIPSTICK — the memory your car doesn't have.</span></div></footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+<script>
+(function(){
+  var D = window.DIPSTICK;
+  D.initThemeToggle(document.getElementById('themeToggle'));
+  var toastTimer;
+  function toast(msg){ var t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(function(){t.classList.remove('show');},2600); }
+
+  function render(){
+    var providers = D.getState().providers;
+    document.getElementById('providerEmpty').style.display = providers.length ? 'none':'block';
+    document.getElementById('providerList').innerHTML = providers.map(function(p){
+      var usage = D.providerUsage(p.id);
+      return '<div class="row"><div style="flex:1"><b>'+D.esc(p.name)+'</b> <span class="pill none">'+D.esc(p.tags&&p.tags[0]||'shop')+'</span>'+
+        '<div class="muted" style="font-size:12.5px">'+D.esc(p.phone||'')+(p.phone&&p.address?' · ':'')+D.esc(p.address||'')+'</div>'+
+        '<div class="muted" style="font-size:12px;margin-top:4px">'+(usage.length? 'Used '+usage.length+' time'+(usage.length===1?'':'s')+' — last: '+D.esc(D.vehicleTitle(usage[0].vehicle))+' on '+D.fmtDate(usage[0].record.date) : 'Not used on any logged service yet')+'</div></div>'+
+        '<button class="btn sm danger" data-id="'+p.id+'">Delete</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(document.querySelectorAll('#providerList [data-id]'), function(btn){
+      btn.addEventListener('click', function(){ D.removeProvider(this.dataset.id); D.scheduleSave(); render(); });
+    });
+  }
+
+  document.getElementById('providerForm').addEventListener('submit', function(e){
+    e.preventDefault();
+    D.addProvider({ name: document.getElementById('pName').value.trim(), phone: document.getElementById('pPhone').value,
+      address: document.getElementById('pAddress').value, tags: [document.getElementById('pTag').value] });
+    D.scheduleSave(); this.reset(); render(); toast('Shop added');
+  });
+
+  D.loadState(function(){ render(); });
+})();
+</script>
+</body>
+</html>
