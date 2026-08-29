@@ -46,7 +46,7 @@ a{color:inherit}
 header{border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--header-bg);backdrop-filter:blur(6px);z-index:20}
 header .wrap{display:flex;align-items:center;gap:24px;padding:calc(14px + env(safe-area-inset-top)) 20px 14px;flex-wrap:wrap}
 .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:.2px;text-decoration:none;color:var(--text)}
-.brand .mark{width:46px;height:46px;border-radius:11px;object-fit:cover;display:block;flex-shrink:0}
+.brand .mark{height:52px;width:auto;object-fit:contain;display:block;flex-shrink:0}
 .brand .tag{font-weight:500;color:var(--muted);font-size:12px;margin-left:2px}
 nav{display:flex;align-items:center;gap:4px;margin-left:auto;flex-wrap:wrap}
 nav a{padding:8px 12px;border-radius:9px;text-decoration:none;color:var(--muted);font-size:14px;font-weight:600}
