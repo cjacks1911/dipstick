@@ -1,12 +1,15 @@
 {
+  "id": "/",
   "name": "Dipstick — Garage Log",
   "short_name": "Dipstick",
   "description": "Vehicle maintenance, repair records and reminders. No account, no server — it all lives on your device.",
-  "start_url": "index.html",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#0b0d10",
   "theme_color": "#0b0d10",
   "orientation": "portrait-primary",
+  "categories": ["productivity", "utilities", "lifestyle"],
   "icons": [
     { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
