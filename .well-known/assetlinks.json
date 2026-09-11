@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "cool.dipstick.twa",
+        "sha256_cert_fingerprints": ["4A:3A:3D:77:B5:85:31:95:92:9D:72:34:57:35:A6:74:CF:C9:2C:95:C3:45:0E:54:92:21:1B:94:30:9B:5D:20"]
+      }
+    }]
