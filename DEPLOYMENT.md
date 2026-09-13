@@ -57,3 +57,37 @@ build command — it's a static site, publish directory is the repo root.
   (features, architecture, "no server, ever" constraint). See the
   feature-backlog Artifact for the shipped/bench feature history:
   https://claude.ai/code/artifact/f2234836-048a-4a2b-998b-2b1b5f9e545d
+
+## Google Play — status as of 13 Sep 2026
+
+- **Play Console account:** "Husllyfe" (personal), signed in as 5thwarddev@gmail.com,
+  developer ID 6475154559821654228. Identity verified 7 Sep 2026.
+- **App:** "Dipstick — Garage Log", package `cool.dipstick.twa`, app ID 4975370475934097201,
+  free, category Auto & Vehicles, contact 5thwarddev@gmail.com / https://dipstick.cool.
+- **Android package:** built with PWABuilder on 28 Aug 2026. Lives in
+  `C:\Users\husll\Downloads\Dipstick - Google Play package\` on Curt's laptop:
+  `.aab` (uploaded, version code 1 / 1.0.0.0), `.apk`, `signing.keystore` +
+  `signing-key-info.txt` (BACK THESE UP — the only key that can sign updates),
+  and `store-listing\` (icon, feature graphic, phone/7"/10" screenshots).
+- **Digital Asset Links:** `.well-known/assetlinks.json` in this repo carries BOTH
+  fingerprints — Google's app-signing key (CB:42:4D:…:DD:4E, from Play Console →
+  App integrity) and the PWABuilder upload key (4A:3A:3D:…:5D:20). Live at
+  https://dipstick.cool/.well-known/assetlinks.json. Don't remove either.
+- **Tracks:** Internal testing has release 1 (1.0.0.0) live. Closed testing "Alpha"
+  (US only) with the same bundle was submitted for Google review on 13 Sep 2026
+  together with the store listing and all app-content declarations (privacy policy
+  URL, no sign-in, no ads, no advertising ID, content rating Everyone/PEGI 3,
+  target 18+, data safety = nothing collected/shared, not gov/financial/health).
+- **Testers:** one account-wide email list, "Dipstick internal testers" (26 addresses),
+  attached to both tracks. Internal opt-in link:
+  https://play.google.com/apps/internaltest/4700716231126918246 — the closed-test
+  link appears in Play Console → Closed testing → Testers once the review passes.
+- **Path to public:** closed test needs ≥12 testers opted in continuously for 14 days,
+  then "Apply for production" on the dashboard, then Google reviews again.
+- **If ads are ever added:** the app is a TWA, so AdMob's native SDK can't be used —
+  AdSense on the site is the route. That flips the Ads + Advertising ID declarations,
+  changes Data safety, and contradicts the "no ads / nothing leaves the device" copy
+  in privacy.html and the store listing.
+- **Screenshot generator:** screenshots were produced with Playwright against a local
+  copy of this site seeded with sample localStorage state (2005 E500 + 2019 Tacoma);
+  re-run the same idea if the UI changes.
