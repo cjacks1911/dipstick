@@ -8,7 +8,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b0d10">
 <link rel="icon" href="favicon.png">
-<link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="app.css?v=20261012b">
 </head>
 <body>
 <header class="no-print">
@@ -312,7 +312,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="app.js"></script>
+<script src="app.js?v=20261012b"></script>
 <script>
 (function(){
   var D = window.DIPSTICK;
@@ -356,16 +356,18 @@
     document.getElementById('recallBtn').addEventListener('click', function(){
       var btn=this; btn.disabled=true; btn.textContent='Checking…';
       D.refreshRecalls(veh).then(function(rec){
-          D.scheduleSave(); renderHeader();
-          toast(rec.count ? rec.count+' recall'+(rec.count===1?'':'s')+' found'+(rec.query.nhtsaModel && rec.query.nhtsaModel.toUpperCase()!==String(veh.model).toUpperCase() ? ' (searched as '+rec.query.nhtsaModel+')' : '')
-            : rec.modelMatched ? 'No recalls on file for this model' : 'NHTSA doesn\'t list "'+veh.model+'". Try the model name as it appears on your registration.');
-        })
-        .catch(function(err){
-          var m = String(err.message);
+          try {
+            D.scheduleSave(); renderHeader();
+            toast(rec.count ? rec.count+' recall'+(rec.count===1?'':'s')+' found'+(rec.query.nhtsaModel && rec.query.nhtsaModel.toUpperCase()!==String(veh.model).toUpperCase() ? ' (searched as '+rec.query.nhtsaModel+')' : '')
+              : rec.modelMatched ? 'No recalls on file for this model' : 'NHTSA doesn\'t list "'+veh.model+'". Try the model name as it appears on your registration.');
+          } catch (e) { if (window.console) console.error('[dipstick] recall display', e); toast('Recalls checked. Reload the page to see them.'); }
+        }, function(err){
+          var m = String(err && err.message);
+          if (window.console) console.error('[dipstick] recall check', err);
           toast(m==='need_year_make_model' ? 'Add year, make and model first'
             : m==='timeout' ? 'NHTSA is taking too long to answer. Try again in a minute.'
             : m==='offline' ? 'You look offline. Connect and try again.'
-            : 'NHTSA had a problem answering. Try again later.');
+            : 'NHTSA had a problem answering ('+m+'). Try again later.');
         })
         .then(function(){ btn.disabled=false; btn.textContent='Check NHTSA recalls'; });
     });

@@ -339,8 +339,9 @@
   }
   function recallDateKey(s) {
     if (!s) return '';
+    // NHTSA's recalls API sends ReportReceivedDate as DD/MM/YYYY ("21/07/2021").
     var m = String(s).match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (m) return m[3] + '-' + m[1] + '-' + m[2];
+    if (m) return m[3] + '-' + m[2] + '-' + m[1];
     var d = new Date(s);
     return isNaN(d) ? '' : dayKey(d);
   }
