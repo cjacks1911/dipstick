@@ -302,16 +302,25 @@
     var expected = check === 10 ? 'X' : String(check);
     return vin.charAt(8) === expected;
   }
-  function fetchJson(url) {
+  /**
+   * allowStatus: extra HTTP statuses whose JSON body should still be read.
+   * NHTSA's recalls endpoint answers 400 with a normal {"Count":0,...} body
+   * when it has nothing on file for that make/model/year, which is a real
+   * answer ("no recalls under that name"), not a failed lookup.
+   */
+  function fetchJson(url, allowStatus) {
     if (typeof fetch !== 'function') return Promise.reject(new Error('offline'));
     var controller = (typeof AbortController === 'function') ? new AbortController() : null;
     var timer = setTimeout(function () { if (controller) controller.abort(); }, LOOKUP_TIMEOUT_MS);
     var opts = controller ? { signal: controller.signal } : {};
     return fetch(url, opts).then(function (res) {
       clearTimeout(timer);
-      if (!res.ok) throw new Error('http_' + res.status);
-      return res.json();
-    }, function (err) { clearTimeout(timer); throw err; });
+      if (!res.ok && (allowStatus || []).indexOf(res.status) === -1) throw new Error('http_' + res.status);
+      return res.json().catch(function () { throw new Error('http_' + res.status); });
+    }, function (err) {
+      clearTimeout(timer);
+      throw new Error(err && err.name === 'AbortError' ? 'timeout' : 'offline');
+    });
   }
   function firstNonEmpty() {
     for (var i = 0; i < arguments.length; i++) {
@@ -369,15 +378,87 @@
     });
   }
 
-  function fetchRecalls(year, make, model) {
-    var q = '?make=' + encodeURIComponent(String(make || '').trim()) +
-            '&model=' + encodeURIComponent(String(model || '').trim()) +
+  // NHTSA files recalls under its own make/model names ("CHEVROLET",
+  // "E-CLASS"), so a car entered as "Chevy" or "E500" finds nothing. Map the
+  // common make nicknames, and if the exact model finds nothing, look the
+  // model up in NHTSA's own list for that year and make and try the match.
+  var RECALL_MAKE_ALIASES = { chevy: 'Chevrolet', vw: 'Volkswagen', benz: 'Mercedes-Benz', mercedes: 'Mercedes-Benz',
+    'mercedes benz': 'Mercedes-Benz', merc: 'Mercedes-Benz', landrover: 'Land Rover', 'alfa': 'Alfa Romeo' };
+  var RECALL_MODELS_URL = 'https://api.nhtsa.gov/products/vehicle/models';
+
+  function recallMake(make) {
+    var raw = String(make || '').trim();
+    return RECALL_MAKE_ALIASES[raw.toLowerCase()] || raw;
+  }
+  function squash(s) { return String(s || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+  /**
+   * NHTSA model names that fit what the owner typed, best first (empty if
+   * none). Exact matches ignoring punctuation win ("F150" = "F-150"); then
+   * names that start with what was typed or vice versa ("Silverado" ->
+   * "SILVERADO 1500"), ranked by how often NHTSA lists them, since the base
+   * model shows up under the most recall campaigns; then Mercedes-style
+   * badges ("E500" -> "E-CLASS").
+   */
+  function matchRecallModels(typed, nhtsaModels) {
+    var t = squash(typed);
+    if (!t || !nhtsaModels.length) return [];
+    var freq = {}, names = [];
+    nhtsaModels.forEach(function (m) {
+      var k = m.toUpperCase();
+      if (!freq[k]) { freq[k] = 0; names.push(m); }
+      freq[k]++;
+    });
+    var exact = names.filter(function (m) { return squash(m) === t; });
+    if (exact.length) return exact.slice(0, 1);
+    var pref = names.filter(function (m) { var q = squash(m); return q.length >= 2 && (t.indexOf(q) === 0 || q.indexOf(t) === 0); })
+      .sort(function (x, y) {
+        return (freq[y.toUpperCase()] - freq[x.toUpperCase()]) ||
+               (Math.abs(squash(x).length - t.length) - Math.abs(squash(y).length - t.length));
+      });
+    if (pref.length) return pref;
+    var badge = t.match(/^([A-Z]{1,3})\d{2,3}/);
+    if (badge) return names.filter(function (m) { return squash(m) === badge[1] + 'CLASS'; }).slice(0, 1);
+    return [];
+  }
+  function queryRecalls(year, make, model) {
+    var q = '?make=' + encodeURIComponent(make) + '&model=' + encodeURIComponent(model) +
             '&modelYear=' + encodeURIComponent(String(year || '').trim());
-    return fetchJson(RECALLS_URL + q).then(function (data) {
-      var rows = (data && (data.results || data.Results)) || [];
+    return fetchJson(RECALLS_URL + q, [400]).then(function (data) {
+      return (data && (data.results || data.Results)) || [];
+    });
+  }
+  function fetchRecalls(year, make, model) {
+    var mk = recallMake(make);
+    var md = String(model || '').trim();
+    return queryRecalls(year, mk, md).then(function (rows) {
+      if (rows.length) return { rows: rows, model: md, matched: true };
+      var q = '?modelYear=' + encodeURIComponent(String(year || '').trim()) + '&make=' + encodeURIComponent(mk) + '&issueType=r';
+      return fetchJson(RECALL_MODELS_URL + q, [400]).then(function (data) {
+        var models = ((data && data.results) || []).map(function (r) { return String(r.model || ''); }).filter(Boolean);
+        var cands = matchRecallModels(md, models).filter(function (m) { return m !== md; }).slice(0, 3);
+        if (!cands.length) {
+          // A name NHTSA lists with zero recalls is a clean "none"; a name it
+          // doesn't list at all may just be spelled differently.
+          var known = models.some(function (m) { return squash(m) === squash(md); });
+          return { rows: [], model: md, matched: known };
+        }
+        // Try the best few candidates in order; first one with recalls wins.
+        var i = 0;
+        function next() {
+          var name = cands[i];
+          return queryRecalls(year, mk, name).then(function (rows2) {
+            if (rows2.length || ++i >= cands.length) return { rows: rows2, model: rows2.length ? name : cands[0], matched: true };
+            return next();
+          });
+        }
+        return next();
+      }, function () { return { rows: [], model: md, matched: false }; });
+    }).then(function (res) {
+      var rows = res.rows;
       return {
         checkedAt: new Date().toISOString(),
-        query: { year: String(year || ''), make: String(make || ''), model: String(model || '') },
+        query: { year: String(year || ''), make: String(make || ''), model: String(model || ''), nhtsaMake: mk, nhtsaModel: res.model },
+        modelMatched: res.matched,
         count: rows.length,
         campaigns: rows.map(function (r) {
           return {
@@ -400,7 +481,8 @@
     if (!r) return { checked: false, count: 0, urgent: false };
     var days = daysBetween(dayKey(new Date(r.checkedAt)), todayKey());
     var urgent = (r.campaigns || []).some(function (c) { return c.parkIt || c.parkOutside; });
-    return { checked: true, count: r.count || 0, urgent: urgent, days: days, stale: days >= RECALL_STALE_DAYS, campaigns: r.campaigns || [] };
+    return { checked: true, count: r.count || 0, urgent: urgent, days: days, stale: days >= RECALL_STALE_DAYS, campaigns: r.campaigns || [],
+      modelMatched: r.modelMatched !== false, nhtsaModel: (r.query && r.query.nhtsaModel) || '' };
   }
 
   // =======================================================================
@@ -1324,8 +1406,8 @@
       var rc = recallStatus(v);
       if (rc.checked && rc.count > 0) {
         out.push({ key: 'recall:' + v.id + ':' + rc.count, kind: 'recall', status: rc.urgent ? 'overdue' : 'soon',
-          title: vehicleTitle(v) + ' — ' + rc.count + ' open recall' + (rc.count === 1 ? '' : 's'),
-          detail: rc.urgent ? 'A campaign says do not drive it until this is fixed.' : 'Free to have done at a franchised dealer.' });
+          title: vehicleTitle(v) + ' — ' + rc.count + ' recall' + (rc.count === 1 ? '' : 's') + ' for this model',
+          detail: rc.urgent ? 'A campaign says do not drive it until this is fixed.' : 'Recall repairs are free at a dealer. Enter your VIN at nhtsa.gov/recalls to see if yours is still open.' });
       }
       (v.warranties || []).forEach(function (w) {
         var st = warrantyStatus(w, v);

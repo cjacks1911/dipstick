@@ -7,7 +7,7 @@
  * only cross-origin calls this app makes are NHTSA VIN/recall lookups, and a
  * stale recall answer served silently would be worse than no answer at all.
  */
-var CACHE_VERSION  = 'dipstick-v1';
+var CACHE_VERSION  = 'dipstick-v2';
 var REMINDER_CACHE = 'dipstick-reminders';
 
 var SHELL = [
