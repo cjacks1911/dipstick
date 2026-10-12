@@ -10,7 +10,7 @@
 <meta name="theme-color" content="#0b0d10">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="favicon.png">
-<link rel="stylesheet" href="app.css?v=20261012b">
+<link rel="stylesheet" href="app.css?v=20261012c">
 </head>
 <body>
 <header>
@@ -125,6 +125,8 @@
         <select id="currencySelect"></select>
       </div>
       <p class="muted" style="font-size:12px;margin:6px 0 0">Changes how every cost is displayed across the whole garage. Amounts you've already entered aren't converted — just relabeled.</p>
+      <div style="margin:16px 0 0"><label style="font-size:14px"><input type="checkbox" id="autoRecall"> Check for new safety recalls automatically</label></div>
+      <p class="muted" style="font-size:12px;margin:6px 0 0">Every 30 days, when you open Dipstick, it asks NHTSA about each car's year, make and model, and tells you if a new recall shows up. Nothing about you is sent.</p>
     </section>
 
     <section class="panel">
@@ -151,7 +153,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="app.js?v=20261012b"></script>
+<script src="app.js?v=20261012c"></script>
 <script>
 (function(){
   var D = window.DIPSTICK;
@@ -321,6 +323,25 @@
     });
   }
 
+  function wireAutoRecall(){
+    var box = document.getElementById('autoRecall');
+    box.checked = D.getAutoRecall();
+    box.addEventListener('change', function(){
+      D.setAutoRecall(this.checked); D.scheduleSave();
+      toast(this.checked ? 'Automatic recall checks on' : 'Automatic recall checks off');
+      if (this.checked) runAutoRecalls();
+    });
+  }
+  function runAutoRecalls(){
+    D.autoRefreshRecalls(function(found){
+      renderAll(); D.publishDigest(); D.refreshBadge();
+      if (found.length) {
+        var n = found.reduce(function(a,f){ return a+f.added; }, 0);
+        toast(n+' new recall'+(n===1?'':'s')+' for '+(found.length===1 ? D.vehicleTitle(found[0].vehicle) : found.length+' of your cars')+'. See Coming up.');
+      }
+    });
+  }
+
   function wireCurrency(){
     document.getElementById('currencySelect').addEventListener('change', function(){
       D.setCurrency(this.value);
@@ -420,8 +441,8 @@
     });
   }
 
-  wireSetup(); wireVin(); wireReminders(); wireInventory(); wireCurrency(); wireBackup(); wireInstall();
-  D.loadState(function(){ renderAll(); D.publishDigest(); D.refreshBadge(); });
+  wireSetup(); wireVin(); wireReminders(); wireInventory(); wireCurrency(); wireAutoRecall(); wireBackup(); wireInstall();
+  D.loadState(function(){ renderAll(); D.publishDigest(); D.refreshBadge(); document.getElementById('autoRecall').checked = D.getAutoRecall(); runAutoRecalls(); });
 
   if('serviceWorker' in navigator && location.protocol !== 'file:'){
     window.addEventListener('load', function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });

@@ -7,10 +7,10 @@
  * only cross-origin calls this app makes are NHTSA VIN/recall lookups, and a
  * stale recall answer served silently would be worse than no answer at all.
  */
-var CACHE_VERSION  = 'dipstick-v3';
+var CACHE_VERSION  = 'dipstick-v4';
 // Bump ASSET_VERSION together with the ?v= on app.js/app.css in every page,
 // so a fresh page never runs against a stale cached script.
-var ASSET_VERSION  = '20261012b';
+var ASSET_VERSION  = '20261012c';
 var REMINDER_CACHE = 'dipstick-reminders';
 
 var SHELL = [

@@ -9,8 +9,9 @@
  *
  * No server, no account, no backend. Everything lives in localStorage on
  * this device. The only network calls this app ever makes are to NHTSA's
- * free public vehicle database (VIN decode + recalls) — optional, and never
- * required for anything else to work.
+ * free public vehicle database (VIN decode + recalls). VIN decode runs only
+ * when tapped; the recall check also re-runs itself every 30 days unless the
+ * owner turns that off in Settings. Neither is required for anything else.
  */
 (function (global) {
   'use strict';
@@ -23,7 +24,7 @@
   var STORAGE_LIMIT_BYTES = 4.5 * 1024 * 1024; // conservative localStorage budget
 
   function freshState() {
-    return { vehicles: [], providers: [], inventory: [], currency: 'USD', lastExportAt: null, setupDone: false };
+    return { vehicles: [], providers: [], inventory: [], currency: 'USD', autoRecall: true, lastExportAt: null, setupDone: false };
   }
   var state = freshState();
 
@@ -49,6 +50,7 @@
     s.providers = s.providers || [];
     s.inventory = s.inventory || [];
     s.currency = s.currency || 'USD';
+    if (s.autoRecall === undefined) s.autoRecall = true;
     return s;
   }
 
@@ -477,6 +479,58 @@
     if (!v.year || !v.make || !v.model) return Promise.reject(new Error('need_year_make_model'));
     return fetchRecalls(v.year, v.make, v.model).then(function (rec) { v.recalls = rec; scheduleSave(); return rec; });
   }
+  // -----------------------------------------------------------------------
+  // automatic recall re-check — runs when the app opens, for any car whose
+  // last check is 30+ days old (or never happened, or whose year/make/model
+  // changed since). Owner can turn it off in Settings. A failed attempt
+  // waits a day before retrying so a slow NHTSA doesn't get hit on every open.
+  // -----------------------------------------------------------------------
+  var RECALL_RETRY_MS = 24 * 60 * 60 * 1000;
+  var autoRecallRunning = false;
+  function getAutoRecall() { return state.autoRecall !== false; }
+  function setAutoRecall(on) { state.autoRecall = !!on; }
+  function recallCheckDue(v) {
+    if (!v || !v.year || !v.make || !v.model) return false;
+    if (v.recallAttemptAt && Date.now() - new Date(v.recallAttemptAt).getTime() < RECALL_RETRY_MS) return false;
+    var r = v.recalls;
+    if (!r || !r.checkedAt) return true;
+    var q = r.query || {};
+    if (String(q.year) !== String(v.year) || String(q.make) !== String(v.make) || String(q.model) !== String(v.model)) return true;
+    return daysBetween(dayKey(new Date(r.checkedAt)), todayKey()) >= RECALL_STALE_DAYS;
+  }
+  /**
+   * done(found): found = [{ vehicle, added }] for each car where campaigns
+   * appeared that weren't in its previous check. Never throws; never shows UI.
+   */
+  function autoRefreshRecalls(done) {
+    done = done || function () {};
+    if (!getAutoRecall() || autoRecallRunning) return done([]);
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return done([]);
+    var due = (state.vehicles || []).filter(recallCheckDue);
+    if (!due.length) return done([]);
+    autoRecallRunning = true;
+    var found = [];
+    var chain = Promise.resolve();
+    due.forEach(function (v) {
+      chain = chain.then(function () {
+        var before = {};
+        var hadCheck = !!(v.recalls && v.recalls.checkedAt);
+        ((v.recalls && v.recalls.campaigns) || []).forEach(function (c) { before[c.id] = true; });
+        v.recallAttemptAt = new Date().toISOString();
+        return refreshRecalls(v).then(function (rec) {
+          v.recallAttemptAt = null;
+          var added = (rec.campaigns || []).filter(function (c) { return !before[c.id]; }).length;
+          if (hadCheck && added) found.push({ vehicle: v, added: added });
+        }, function () { /* keep the old result; retry tomorrow */ });
+      });
+    });
+    chain.then(function () {
+      autoRecallRunning = false;
+      scheduleSave();
+      done(found);
+    });
+  }
+
   function recallStatus(v) {
     var r = v && v.recalls;
     if (!r) return { checked: false, count: 0, urgent: false };
@@ -1658,6 +1712,7 @@
     // VIN + recalls
     normalizeVin: normalizeVin, isValidVin: isValidVin, decodeVin: decodeVin,
     fetchRecalls: fetchRecalls, refreshRecalls: refreshRecalls, recallStatus: recallStatus, RECALL_STALE_DAYS: RECALL_STALE_DAYS,
+    autoRefreshRecalls: autoRefreshRecalls, getAutoRecall: getAutoRecall, setAutoRecall: setAutoRecall,
     // service schedule
     SERVICE_SCHEDULE: SERVICE_SCHEDULE, LOG_TYPE_SUGGESTIONS: LOG_TYPE_SUGGESTIONS, MAKE_INTERVALS: MAKE_INTERVALS, makeSchedule: makeSchedule, makeScheduleLabel: makeScheduleLabel,
     serviceInterval: serviceInterval, intervalSource: intervalSource, serviceTypesFor: serviceTypesFor,

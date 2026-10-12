@@ -8,7 +8,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0b0d10">
 <link rel="icon" href="favicon.png">
-<link rel="stylesheet" href="app.css?v=20261012b">
+<link rel="stylesheet" href="app.css?v=20261012c">
 </head>
 <body>
 <header class="no-print">
@@ -312,7 +312,7 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script src="app.js?v=20261012b"></script>
+<script src="app.js?v=20261012c"></script>
 <script>
 (function(){
   var D = window.DIPSTICK;
@@ -972,6 +972,11 @@
   D.loadState(function(){
     if(!v()){ location.href='index.html'; return; }
     wireTabs(); wireForms(); wireTrips(); wireObd(); renderAll();
+    D.autoRefreshRecalls(function(found){
+      renderHeader();
+      var mine = found.filter(function(f){ return f.vehicle.id === vehicleId; })[0];
+      if (mine) toast(mine.added+' new recall'+(mine.added===1?'':'s')+' found for this car');
+    });
   });
 })();
 </script>
