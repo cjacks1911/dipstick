@@ -13,6 +13,7 @@ Push to `main` and Netlify auto-deploys (project `serene-brigadeiros-8978a1`). T
 
 ## Rules
 - **No server, ever.** Don't add a backend, accounts or tracking. Data never leaves the device.
+- **No ads, ever.** Curt decided Dipstick stays ad-free (no AdSense, no AdMob). Revenue comes from shop referrals or a paid sync tier, not advertising.
 - Never remove either fingerprint from `.well-known/assetlinks.json`, or the Play app breaks.
 - Curt's local copy is `C:\Users\husll\Downloads\dipstick`. Git Bash is installed inside it at `dipstick\Git\` (gitignored). Don't move or delete that folder.
 - Curt is on Windows: give PowerShell commands.
